@@ -1,0 +1,29 @@
+# Original game files (copyrighted; never commit)
+*.sna
+*.z80
+*.szx
+*.tap
+*.tzx
+*.rom
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Agent scratch
+.scratch/
