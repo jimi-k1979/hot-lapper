@@ -28,6 +28,43 @@ _Avoid_: rev limit, limiter
 How hot the engine is, from cold to fully overheated. It builds while the engine runs above the redline and cools slowly below it. An automatic car never builds it.
 _Avoid_: temperature, overheat level
 
+## Car condition
+
+**Engine wear**:
+How worn out the engine is, from new to finished. It is never repaired during a race.
+_Avoid_: engine damage, engine health
+
+**Tyre wear**:
+How worn the tyres are, from new to finished. Worn tyres grip less.
+_Avoid_: tyre damage, tread
+
+**Body damage**:
+Harm done to the car's bodywork by hazards. Ordinary driving never causes it.
+_Avoid_: damage (on its own), health, HP
+
+**Fuel**:
+What is left in the car's tank. Every race starts with a full tank.
+_Avoid_: petrol, gas
+
+**Puncture**:
+A flat tyre caused by running over glass. A punctured car wobbles from side to side and is held to a low speed until the next pit stop.
+_Avoid_: flat, blowout
+
+**Holed fuel tank**:
+A fuel tank pierced by rocks, so the car uses fuel faster than normal.
+_Avoid_: fuel leak, damaged tank
+
+## Hazards
+
+**Hazard**:
+A patch of something on the road that harms the car or its handling when the car runs over it. Every hazard is in a fixed place in its circuit. There are five kinds:
+- **Oil**: grip drops sharply.
+- **Water**: grip drops a little and the car is slowed.
+- **Glass**: causes a puncture.
+- **Debris**: wears the tyres and causes body damage.
+- **Rocks**: cause a holed fuel tank.
+_Avoid_: obstacle, hazard object, pickup
+
 ## Racing
 
 **Race**:
@@ -62,11 +99,19 @@ _Avoid_: off track, on the grass, offroad
 How long the car has been off the road without a break. It resets the moment the car is back on the road.
 _Avoid_: off-road timer, grass timer
 
+**Pit area**:
+A marked stretch of road, on one side, just after the start line, where the car stops for a pit stop. It is part of the road, not beside it.
+_Avoid_: pit lane, pits, garage
+
+**Pit stop**:
+A halt in the pit area during a race, while the race clock keeps running, to refuel the car and repair it. The more there is to repair, the longer it takes.
+_Avoid_: service, repair stop
+
 **Race outcome**:
 How a race ended. Every race ends in exactly one of six outcomes:
 - **Finished**: every lap was completed.
 - **Out of fuel**: the fuel ran out and the car rolled to a stop before the finish.
-- **Broken down**: a part of the car gave out through wear or reliability.
+- **Broken down**: the engine wore out.
 - **Wrecked**: a hazard damaged the car beyond driving on.
 - **Stranded**: the car stayed off the road for more than 5 seconds in one go.
 - **Retired**: the player chose to end the race.
