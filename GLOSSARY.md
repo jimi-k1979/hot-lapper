@@ -16,6 +16,18 @@ _Avoid_: garage, lineup
 Whether the player changes gear (manual) or the car does it for them (automatic).
 _Avoid_: gearbox type
 
+**Redline**:
+The engine speed above which the engine starts to build heat.
+_Avoid_: rev limit, limiter
+
+**Max revs**:
+The engine speed at which the engine stops producing power. Changing down at speed can push the engine past it.
+_Avoid_: rev limit, limiter
+
+**Engine heat**:
+How hot the engine is, from cold to fully overheated. It builds while the engine runs above the redline and cools slowly below it. An automatic car never builds it.
+_Avoid_: temperature, overheat level
+
 ## Racing
 
 **Race**:
@@ -34,13 +46,29 @@ _Avoid_: track map, minimap
 How many laps a race lasts, chosen by the player before the race.
 _Avoid_: race length, distance
 
+**Start sequence**:
+The opening of a race: the car is held on the line with its brakes on while red, red, red and then green lights come on a second apart. The player may rev the engine while held. The race clock starts on green.
+_Avoid_: countdown, lights out
+
+**Lateral position**:
+How far the car is from the centre line of the road, across its width. Steering changes it; the car itself never turns on screen.
+_Avoid_: x, offset, lane
+
+**Off the road**:
+The state of a car with one whole tyre width past the edge of the road. Off the road the car is slowed heavily and the warning sound plays.
+_Avoid_: off track, on the grass, offroad
+
+**Stranded timer**:
+How long the car has been off the road without a break. It resets the moment the car is back on the road.
+_Avoid_: off-road timer, grass timer
+
 **Race outcome**:
 How a race ended. Every race ends in exactly one of six outcomes:
 - **Finished**: every lap was completed.
 - **Out of fuel**: the fuel ran out and the car rolled to a stop before the finish.
 - **Broken down**: a part of the car gave out through wear or reliability.
 - **Wrecked**: a hazard damaged the car beyond driving on.
-- **Stranded**: the car stayed off the road for too long in one go.
+- **Stranded**: the car stayed off the road for more than 5 seconds in one go.
 - **Retired**: the player chose to end the race.
 _Avoid_: result, ending, DNF
 
