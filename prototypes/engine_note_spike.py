@@ -8,6 +8,7 @@ Answers: which pygame-ce route gives a glitch-free engine note,
 the _sdl2 AudioDevice callback or Channel.queue chunks? (ticket #13)
 
 Run:  uv run prototypes/engine_note_spike.py
+Starts in the callback route, sounding at idle.
 
 Keys
   1 / 2 / 0   callback route / queue route / silence
@@ -30,9 +31,9 @@ RATE = 44100
 MIXER_BUFFER = 512
 SIZES = (256, 512, 1024, 2048)
 LOADS_MS = (0, 10, 25)
-IDLE_HZ = 33.0
-MAX_HZ = 300.0
-VOLUME = 0.25
+IDLE_HZ = 66.0
+MAX_HZ = 600.0
+VOLUME = 0.6
 TAU = 2 * math.pi
 
 
@@ -145,12 +146,13 @@ def main() -> None:
     clock = pygame.Clock()
     channel = pygame.mixer.Channel(0)
 
-    mode = "silence"
+    mode = "callback"
     size_index = 1
     load_index = 0
     sweep = False
     sweep_t = 0.0
-    device: AudioDevice | None = None
+    device: AudioDevice | None = open_device(SIZES[size_index])
+    device.pause(0)
     queue_started = False
 
     def stop_all() -> None:
