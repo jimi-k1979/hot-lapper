@@ -67,16 +67,32 @@ _Avoid_: obstacle, hazard object, pickup
 
 ## The road
 
+**Straight**:
+A stretch of road that does not turn.
+_Avoid_: straightaway
+
+**Corner**:
+A stretch of road that turns left or right. How tight it is is given by its radius, and it eases in from the road before it and out into the road after it.
+_Avoid_: bend, turn, curve
+
 **Gradient**:
 How steeply the road climbs or falls. Uphill, a car gathers speed more slowly and stops more quickly; downhill, the reverse.
 _Avoid_: slope, incline, hill angle
 
+**Outer limit**:
+The furthest a car can get from the road, a fixed distance past its edge.
+_Avoid_: barrier, wall, run-off
+
 **Scenery**:
-The things beside a circuit that are there to be seen, not touched. All scenery stands beyond the reach of the car.
+The things beside a circuit that are there to be seen, not touched. All scenery stands beyond the outer limit.
 _Avoid_: props, roadside objects, decorations
 
+**Skyline**:
+A circuit's distant horizon picture. It slides sideways through corners and rises and falls over hills.
+_Avoid_: backdrop, background, horizon
+
 **Corner arrow**:
-A board of scenery on the outside of a bend, on the approach, pointing the way the corner turns.
+A board of scenery on the outside of a corner, on the approach, pointing the way the corner turns.
 _Avoid_: chevron, warning sign
 
 **Start/finish line**:
