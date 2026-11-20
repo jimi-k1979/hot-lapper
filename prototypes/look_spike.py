@@ -30,6 +30,7 @@ Race keys
 
 import math
 import os
+import random
 import sys
 
 import pygame
@@ -276,6 +277,10 @@ def make_sprites():
         pygame.draw.polygon(a, BLACK, [(ox, 1), (ox + 3, 1), (ox + 6, 5), (ox + 3, 9), (ox, 9), (ox + 3, 5)])
     sp["arrow_r"] = (a, 2.4, 2.0)
     sp["arrow_l"] = (pygame.transform.flip(a, True, False), 2.4, 2.0)
+    r = surface(10, 7)
+    pygame.draw.ellipse(r, TRUNK, (0, 1, 10, 7))
+    pygame.draw.ellipse(r, GREY, (2, 1, 4, 3))
+    sp["rock"] = (r, 0.45, 0.3)
     for s, _, _ in sp.values():
         s.set_palette(IDENTITY)
         s.set_colorkey(TRANSPARENT)
@@ -320,13 +325,48 @@ SECTIONS = [  # (length or angle, radius, climb); radius 0 = straight; +ve = rig
     (120, 150, 0),
 ]
 HAZARDS = [  # kind, at (m), across (m), length, width
-    ("oil", 520, -2.0, 12, 3),
-    ("water", 900, 2.5, 20, 4),
-    ("glass", 1300, 0.0, 6, 2),
-    ("debris", 1700, -3.0, 8, 3),
-    ("rocks", 2100, 3.0, 6, 2.5),
+    ("oil", 520, -2.0, 8, 2.5),
+    ("water", 900, 2.5, 14, 4),
+    ("glass", 1300, 0.0, 2, 1.5),
+    ("debris", 1700, -3.0, 4, 3),
+    ("rocks", 2100, 3.0, 2, 2),
 ]
-HAZARD_COL = dict(oil=OIL, water=WATER, glass=WHITE, debris=GREY, rocks=TRUNK)  # noqa: F821
+
+
+def blob(rng, cz, cx, rz, rx, n, jitter):
+    pts = []
+    for k in range(n):
+        a = 2 * math.pi * k / n
+        f = 1 + rng.uniform(-jitter, jitter)
+        pts.append((cz + math.cos(a) * rz * f, cx + math.sin(a) * rx * f))
+    return pts
+
+
+def hazard_shapes(kind, length, width, rng):
+    """Flat decals as (colour, [(along, across), ...]) in metres from the patch's near centre."""
+    if kind == "oil":
+        return [
+            (OIL, blob(rng, length / 2, 0, length / 2, width / 2, 14, 0.3)),  # noqa: F821
+            (COWL_HI, blob(rng, length * 0.4, -width * 0.12, length * 0.18, width * 0.1, 8, 0.3)),  # noqa: F821
+        ]
+    if kind == "water":
+        return [
+            (WATER, blob(rng, length / 2, 0, length / 2, width / 2, 16, 0.25)),  # noqa: F821
+            (SKY_LOW, blob(rng, length * 0.55, width * 0.1, length * 0.25, width * 0.05, 8, 0.2)),  # noqa: F821
+        ]
+    out = []
+    pieces = {"glass": 9, "debris": 6}.get(kind, 0)
+    for k in range(pieces):
+        z, x = rng.uniform(0, length), rng.uniform(-width / 2, width / 2)
+        if kind == "glass":
+            r = rng.uniform(0.08, 0.2)
+            col = WHITE if k % 2 else SKY_LOW  # noqa: F821
+            out.append((col, [(z, x - r), (z + r * 1.6, x + r * 0.3), (z - r * 0.4, x + r)]))
+        else:
+            rz, rx = rng.uniform(0.2, 0.6), rng.uniform(0.2, 0.7)
+            col = (GREY, BLACK, RUMBLE_A)[k % 3]  # noqa: F821
+            out.append((col, blob(rng, z, x, rz, rx, 5, 0.4)))
+    return out
 
 
 class Seg:
@@ -389,9 +429,17 @@ class Track:
                 self.seg_at(z).marks.append(("grid", side, (z % SEG) / SEG))
         for z in range(int(self.start_z + 20), int(self.start_z + 220), int(SEG)):
             self.seg_at(z).marks.append(("pit",))
+        rng = random.Random(3)
         for kind, at, across, length, width in HAZARDS:
-            for z in range(at, at + length, int(SEG)):
-                self.seg_at(z).hazards.append((kind, across, width))
+            seg = self.seg_at(at)
+            base = seg.i * SEG
+            for col, pts in hazard_shapes(kind, length, width, rng):
+                seg.hazards.append((col, [((at + dz - base) / SEG, across + dx) for dz, dx in pts]))
+            if kind == "rocks":
+                for _ in range(6):
+                    z = at + rng.uniform(0, length)
+                    rock = self.seg_at(z)
+                    rock.sprites.append(("rock", across + rng.uniform(-width / 2, width / 2), (z % SEG) / SEG))
         kinds = ["tree", "tree", "bush", "barn", "post", "tree", "bush"]
         for s in self.segs:
             i = s.i
@@ -601,12 +649,6 @@ def render_road(c, v, st, sprites, skyline):
         c_r = RUMBLE_A if band else RUMBLE_B
         pygame.draw.polygon(c, c_r, quad(-HALF - 0.8, HALF + 0.8))
         pygame.draw.polygon(c, ROAD_L if band else ROAD_D, quad(-HALF, HALF))
-        for kind, across, width in seg.hazards:
-            pygame.draw.polygon(c, HAZARD_COL[kind], quad(across - width / 2, across + width / 2, 0.1, 0.9))
-            if kind in ("glass", "rocks", "debris"):
-                for k in range(3):
-                    o = across - width / 2 + width * (k + 0.5) / 3
-                    pygame.draw.polygon(c, BLACK if kind != "glass" else SKY, quad(o - 0.15, o + 0.15, 0.3 + k * 0.15, 0.4 + k * 0.15))
         for m in seg.marks:
             if m[0] == "start":
                 t0 = m[1]
@@ -627,10 +669,17 @@ def render_road(c, v, st, sprites, skyline):
     c.set_clip(None)
 
     for seg, P, clip in reversed(queue):
-        for kind, off in seg.sprites:
+        c.set_clip((0, 0, W, int(clip)))
+        for col, pts in seg.hazards:
+            pygame.draw.polygon(c, col, [P(t, x) for t, x in pts])
+    c.set_clip(None)
+
+    for seg, P, clip in reversed(queue):
+        for kind, off, *at in seg.sprites:
+            t = at[0] if at else 0
             img, wm, hm = sprites[kind]
-            x0, y0 = P(0, off)
-            s = (P(0, off + 1)[0] - x0)
+            x0, y0 = P(t, off)
+            s = (P(t, off + 1)[0] - x0)
             w, h = int(s * wm), int(s * hm)
             if w < 1 or h < 1 or w > W * 3:
                 continue
@@ -877,15 +926,17 @@ class VariantD:
     def cockpit(self, c, st):
         body, hi = CAR_COLOURS[st.car]
         roll = int(st.z * 3) % 6
+        rad = 10
         for cx in (30, 226):
-            tyre = surface(44, 34)
-            pygame.draw.rect(tyre, TYRE, (0, 0, 44, 40), border_radius=10)
-            for y in range(5 - roll, 34, 6):
-                pygame.draw.line(tyre, COWL_HI, (3, y), (40, y))
+            tyre = surface(44, 44)
+            pygame.draw.rect(tyre, TYRE, (0, 0, 44, 54), border_radius=rad)
+            for y in range(5 - roll, 44, 6):
+                inset = 3 + (rad - math.sqrt(max(0, rad * rad - (rad - y) ** 2)) if y < rad else 0)
+                pygame.draw.line(tyre, COWL_HI, (inset, y), (43 - inset, y))
             c.blit(tyre, (cx - 22, 100))
-        top = [(8, 128), (52, 128), (60, 124), (84, 119), (128, 116), (172, 119), (196, 124), (204, 128), (248, 128)]
+        top = [(x, 116 + 0.0014 * (x - 128) ** 2) for x in range(8, 249, 8)]
         pygame.draw.polygon(c, body, top + [(248, 192), (8, 192)])
-        pygame.draw.lines(c, hi, False, top[1:-1])
+        pygame.draw.lines(c, hi, False, top)
         pygame.draw.rect(c, COWL_HI, (56, 130, 144, 70), border_top_left_radius=30, border_top_right_radius=30)
         pygame.draw.rect(c, BLACK, (56, 130, 144, 70), 1, border_top_left_radius=30, border_top_right_radius=30)
         dial(c, 88, 160, 17, st.v * 2.237 / 200, None, "MPH", SMALL)
@@ -1194,7 +1245,11 @@ class App:
             ("hairpin", 0.0, at(930.0, 1.0)),
             ("hill", 0.0, at(640.0, cond="worn")),
             ("crest", 0.0, at(800.0)),
-            ("hazards", 0.0, at(480.0)),
+            ("oil", 0.0, at(500.0)),
+            ("water", 0.0, at(885.0)),
+            ("glass", 0.0, at(1290.0)),
+            ("debris", 0.0, at(1688.0)),
+            ("rocks", 0.0, at(2090.0)),
             ("offroad", 0.0, at(250.0, HALF + 3, offroad_t=2.1, faults=True)),
         ]
         for vi in range(len(VARIANTS)):
