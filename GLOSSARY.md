@@ -65,6 +65,32 @@ A patch of something on the road that harms the car or its handling when the car
 - **Rocks**: cause a holed fuel tank.
 _Avoid_: obstacle, hazard object, pickup
 
+## The road
+
+**Gradient**:
+How steeply the road climbs or falls. Uphill, a car gathers speed more slowly and stops more quickly; downhill, the reverse.
+_Avoid_: slope, incline, hill angle
+
+**Scenery**:
+The things beside a circuit that are there to be seen, not touched. All scenery stands beyond the reach of the car.
+_Avoid_: props, roadside objects, decorations
+
+**Corner arrow**:
+A board of scenery on the outside of a bend, on the approach, pointing the way the corner turns.
+_Avoid_: chevron, warning sign
+
+**Start/finish line**:
+The line across the road where every lap begins and ends.
+_Avoid_: finish line, timing line
+
+**Grid**:
+Ten boxes painted on the road just behind the start/finish line, in staggered pairs.
+_Avoid_: starting grid, grid slots
+
+**Pole position**:
+The front box of the grid, where the car always starts a race.
+_Avoid_: pole, front of the grid
+
 ## Racing
 
 **Race**:
@@ -84,7 +110,7 @@ How many laps a race lasts, chosen by the player before the race.
 _Avoid_: race length, distance
 
 **Start sequence**:
-The opening of a race: the car is held on the line with its brakes on while red, red, red and then green lights come on a second apart. The player may rev the engine while held. The race clock starts on green.
+The opening of a race: the car is held in pole position with its brakes on while red, red, red and then green lights come on a second apart. The player may rev the engine while held. The race clock starts on green.
 _Avoid_: countdown, lights out
 
 **Lateral position**:
