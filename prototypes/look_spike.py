@@ -159,30 +159,81 @@ Z ##### ....# ...#. ..#.. .#... #.... #####
 < ...#. ..#.. .#... #.... .#... ..#.. ...#.
 % ##..# ##..# ...#. ..#.. .#... #..## #..##
 """
-GLYPHS = {}
-for _line in _GLYPHS.strip().splitlines():
-    _ch, *_rows = _line.split()
-    GLYPHS[_ch] = _rows
+_SMALL = """
+A .#. #.# ### #.# #.#
+B ##. #.# ##. #.# ##.
+C .## #.. #.. #.. .##
+D ##. #.# #.# #.# ##.
+E ### #.. ##. #.. ###
+F ### #.. ##. #.. #..
+G .## #.. #.# #.# .##
+H #.# #.# ### #.# #.#
+I ### .#. .#. .#. ###
+J ..# ..# ..# #.# .#.
+K #.# #.# ##. #.# #.#
+L #.. #.. #.. #.. ###
+M #.# ### ### #.# #.#
+N ##. #.# #.# #.# #.#
+O .#. #.# #.# #.# .#.
+P ##. #.# ##. #.. #..
+Q .#. #.# #.# ##. .##
+R ##. #.# ##. #.# #.#
+S .## #.. .#. ..# ##.
+T ### .#. .#. .#. .#.
+U #.# #.# #.# #.# ###
+V #.# #.# #.# #.# .#.
+W #.# #.# ### ### #.#
+X #.# #.# .#. #.# #.#
+Y #.# #.# .#. .#. .#.
+Z ### ..# .#. #.. ###
+0 ### #.# #.# #.# ###
+1 .#. ##. .#. .#. ###
+2 ##. ..# .#. #.. ###
+3 ##. ..# .#. ..# ##.
+4 #.# #.# ### ..# ..#
+5 ### #.. ##. ..# ##.
+6 .## #.. ### #.# ###
+7 ### ..# .#. .#. .#.
+8 ### #.# ### #.# ###
+9 ### #.# ### ..# ##.
+: ... .#. ... .#. ...
+. ... ... ... ... .#.
+- ... ... ### ... ...
+/ ..# ..# .#. #.. #..
+"""
 
 
-def text(c, s, x, y, col, scale=1):
+def _parse(src):
+    out = {}
+    for line in src.strip().splitlines():
+        ch, *rows = line.split()
+        out[ch] = rows
+    return out
+
+
+GLYPHS = _parse(_GLYPHS)
+SMALL = _parse(_SMALL)
+
+
+def text(c, s, x, y, col, scale=1, font=GLYPHS):
+    adv = len(font["0"][0]) + 1
     for ch in s.upper():
-        rows = GLYPHS.get(ch)
+        rows = font.get(ch)
         if rows:
             for ry, row in enumerate(rows):
                 for rx, bit in enumerate(row):
                     if bit == "#":
                         c.fill(col, (x + rx * scale, y + ry * scale, scale, scale))
-        x += 6 * scale
+        x += adv * scale
     return x
 
 
-def text_w(s, scale=1):
-    return len(s) * 6 * scale - scale
+def text_w(s, scale=1, font=GLYPHS):
+    return len(s) * (len(font["0"][0]) + 1) * scale - scale
 
 
-def text_c(c, s, cx, y, col, scale=1):
-    text(c, s, cx - text_w(s, scale) // 2, y, col, scale)
+def text_c(c, s, cx, y, col, scale=1, font=GLYPHS):
+    text(c, s, cx - text_w(s, scale, font) // 2, y, col, scale, font)
 
 
 # ---------------------------------------------------------------- sprites
@@ -467,7 +518,7 @@ def update(st, keys, dt):
     st.v = max(0.0, st.v + a * dt)
     if st.faults:
         st.v = min(st.v, 13.4)
-        st.x += math.sin(st.race_t * 9) * 0.6 * dt * 3
+        st.x += math.cos(st.race_t * 19) * 0.7 * 19 * dt
     st.revs = max(1500.0, st.v * RATIOS[st.gear] * RPM_K)
     st.heat = max(0.0, min(1.0, st.heat + (0.15 if st.revs > REDLINE else -0.02) * dt))
     if auto:
@@ -613,7 +664,7 @@ def lamp(c, x, y, r, on, col):
     pygame.draw.circle(c, BLACK, (x, y), r, 1)  # noqa: F821
 
 
-def dial(c, cx, cy, r, frac, red_from=None, label=None):
+def dial(c, cx, cy, r, frac, red_from=None, label=None, font=GLYPHS):
     pygame.draw.circle(c, GREY, (cx, cy), r + 1)
     pygame.draw.circle(c, PANEL, (cx, cy), r)
     a0, a1 = math.radians(225), math.radians(-45)
@@ -627,7 +678,7 @@ def dial(c, cx, cy, r, frac, red_from=None, label=None):
     a = a0 + (a1 - a0) * max(0, min(1, frac))
     pygame.draw.line(c, AMBER, (cx, cy), (cx + math.cos(a) * (r - 2), cy - math.sin(a) * (r - 2)))
     if label:
-        text_c(c, label, cx, cy + r // 3, GREY)
+        text_c(c, label, cx, cy + r // 3, GREY, font=font)
 
 
 def countdown_big(c, st, cx, cy, scale):
@@ -825,7 +876,6 @@ class VariantD:
 
     def cockpit(self, c, st):
         body, hi = CAR_COLOURS[st.car]
-        W = self.W
         roll = int(st.z * 3) % 6
         for cx in (30, 226):
             tyre = surface(44, 34)
@@ -833,33 +883,31 @@ class VariantD:
             for y in range(5 - roll, 34, 6):
                 pygame.draw.line(tyre, COWL_HI, (3, y), (40, y))
             c.blit(tyre, (cx - 22, 100))
-        pygame.draw.polygon(c, body, [
-            (0, 128), (52, 128), (60, 124), (84, 119), (128, 116), (172, 119),
-            (196, 124), (204, 128), (W, 128), (W, 192), (0, 192),
-        ])
-        pygame.draw.lines(c, hi, False, [(52, 128), (60, 124), (84, 119), (128, 116), (172, 119), (196, 124), (204, 128)])
+        top = [(8, 128), (52, 128), (60, 124), (84, 119), (128, 116), (172, 119), (196, 124), (204, 128), (248, 128)]
+        pygame.draw.polygon(c, body, top + [(248, 192), (8, 192)])
+        pygame.draw.lines(c, hi, False, top[1:-1])
         pygame.draw.rect(c, COWL_HI, (56, 130, 144, 70), border_top_left_radius=30, border_top_right_radius=30)
         pygame.draw.rect(c, BLACK, (56, 130, 144, 70), 1, border_top_left_radius=30, border_top_right_radius=30)
-        dial(c, 84, 158, 17, st.v * 2.237 / 200, None, "MPH")
-        dial(c, 172, 158, 17, st.revs / MAXREV, REDLINE / MAXREV, "RPM")
+        dial(c, 88, 160, 17, st.v * 2.237 / 200, None, "MPH", SMALL)
+        dial(c, 168, 160, 17, st.revs / MAXREV, REDLINE / MAXREV, "RPM", SMALL)
         if not CARS[st.car][1]:
-            bar_v(c, 62, 140, 5, 36, st.heat, band_col(st.heat))
-            text(c, "H", 62 - 2, 180, WHITE)
-        bar_v(c, 189, 140, 5, 36, st.fuel, AMBER if st.fuel > 0.2 else RED)
-        text(c, "F", 189 - 2, 180, WHITE)
-        for k, f in enumerate(st.wear):
-            lamp(c, 112 + k * 8, 136, 2, True, band_col(f))
-        lamp(c, 140, 136, 2, st.faults, RED)
-        lamp(c, 148, 136, 2, st.faults, AMBER)
-        cx, cy, r = 128, 176, 26
+            bar_v(c, 64, 152, 4, 26, st.heat, band_col(st.heat))
+            text(c, "H", 65, 182, WHITE, font=SMALL)
+        bar_v(c, 188, 152, 4, 26, st.fuel, AMBER if st.fuel > 0.2 else RED)
+        text(c, "F", 189, 182, WHITE, font=SMALL)
+        for k, (label, f) in enumerate(zip(("ENG", "TYRE", "BODY"), st.wear)):
+            x = 92 + k * 26
+            text(c, label, x, 134, WHITE, font=SMALL)
+            bar(c, x, 141, 18, 2, 1 - f, band_col(f))
+        cx, cy, r = 128, 178, 26
         a = math.radians(-90 + st.steer * 35)
         pygame.draw.circle(c, GREY, (cx, cy), r, 4)
         for da in (0, 180, 90):
             ang = a + math.radians(da + 90)
             pygame.draw.line(c, GREY, (cx, cy), (cx + math.cos(ang) * r, cy + math.sin(ang) * r), 3)
         pygame.draw.circle(c, RED, (cx + math.cos(a) * (r - 2), cy + math.sin(a) * (r - 2)), 2)
-        pygame.draw.circle(c, BLACK, (cx, cy), 9)
-        text_c(c, "A" if CARS[st.car][1] else str(st.gear + 1), cx, cy - 3, AMBER)
+        pygame.draw.circle(c, BLACK, (cx, cy), 8)
+        text_c(c, "A" if CARS[st.car][1] else str(st.gear + 1), cx, cy - 2, AMBER, font=SMALL)
 
     def hud(self, c, st):
         W = self.W
@@ -880,6 +928,9 @@ class VariantD:
             bar(c, 88, 64, 80, 5, max(0.0, 1 - st.offroad_t / 5), RED)
         if st.stranded_t > 0:
             text_c(c, "STRANDED", 128, 54, RED, 2)
+        if st.faults and int(st.race_t * 3) % 2 == 0:
+            text_c(c, "PUNCTURE", 128, 13, RED)
+            text_c(c, "HOLED TANK", 128, 22, AMBER)
 
 
 def bar_v(c, x, y, w, h, frac, col):
