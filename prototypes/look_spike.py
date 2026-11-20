@@ -379,6 +379,7 @@ class State:
     def __init__(self, track):
         self.track = track
         self.car = 1
+        self.circuit = 0
         self.laps = 3
         self.cond = "new"
         self.faults = False
@@ -816,7 +817,84 @@ class VariantC:
     map_style = "dots"
 
 
-VARIANTS = [VariantA(), VariantB(), VariantC()]
+class VariantD:
+    name = "Your mix: round wheel, dials, bar gauges"
+    W, H, horizon, zoom = 256, 192, 82, 1.0
+    car_scale = 2
+    map_style = "cards"
+
+    def cockpit(self, c, st):
+        body, hi = CAR_COLOURS[st.car]
+        W = self.W
+        roll = int(st.z * 3) % 6
+        for cx in (30, 226):
+            tyre = surface(44, 34)
+            pygame.draw.rect(tyre, TYRE, (0, 0, 44, 40), border_radius=10)
+            for y in range(5 - roll, 34, 6):
+                pygame.draw.line(tyre, COWL_HI, (3, y), (40, y))
+            c.blit(tyre, (cx - 22, 100))
+        pygame.draw.polygon(c, body, [
+            (0, 128), (52, 128), (60, 124), (84, 119), (128, 116), (172, 119),
+            (196, 124), (204, 128), (W, 128), (W, 192), (0, 192),
+        ])
+        pygame.draw.lines(c, hi, False, [(52, 128), (60, 124), (84, 119), (128, 116), (172, 119), (196, 124), (204, 128)])
+        pygame.draw.rect(c, COWL_HI, (56, 130, 144, 70), border_top_left_radius=30, border_top_right_radius=30)
+        pygame.draw.rect(c, BLACK, (56, 130, 144, 70), 1, border_top_left_radius=30, border_top_right_radius=30)
+        dial(c, 84, 158, 17, st.v * 2.237 / 200, None, "MPH")
+        dial(c, 172, 158, 17, st.revs / MAXREV, REDLINE / MAXREV, "RPM")
+        if not CARS[st.car][1]:
+            bar_v(c, 62, 140, 5, 36, st.heat, band_col(st.heat))
+            text(c, "H", 62 - 2, 180, WHITE)
+        bar_v(c, 189, 140, 5, 36, st.fuel, AMBER if st.fuel > 0.2 else RED)
+        text(c, "F", 189 - 2, 180, WHITE)
+        for k, f in enumerate(st.wear):
+            lamp(c, 112 + k * 8, 136, 2, True, band_col(f))
+        lamp(c, 140, 136, 2, st.faults, RED)
+        lamp(c, 148, 136, 2, st.faults, AMBER)
+        cx, cy, r = 128, 176, 26
+        a = math.radians(-90 + st.steer * 35)
+        pygame.draw.circle(c, GREY, (cx, cy), r, 4)
+        for da in (0, 180, 90):
+            ang = a + math.radians(da + 90)
+            pygame.draw.line(c, GREY, (cx, cy), (cx + math.cos(ang) * r, cy + math.sin(ang) * r), 3)
+        pygame.draw.circle(c, RED, (cx + math.cos(a) * (r - 2), cy + math.sin(a) * (r - 2)), 2)
+        pygame.draw.circle(c, BLACK, (cx, cy), 9)
+        text_c(c, "A" if CARS[st.car][1] else str(st.gear + 1), cx, cy - 3, AMBER)
+
+    def hud(self, c, st):
+        W = self.W
+        c.fill(BLACK, (0, 0, W, 10))
+        text(c, f"LAP {max(1, st.lap)}/{st.laps}", 2, 2, WHITE)
+        text_c(c, fmt_time(st.race_t), 128, 2, AMBER)
+        text(c, "BEST " + fmt_time(st.best), 254 - text_w("BEST 0:00.00"), 2, WHITE)
+        reds, green = st.lights
+        if reds or green:
+            c.fill(BLACK, (84, 22, 88, 24))
+            for k in range(4):
+                on = (k < 3 and reds > k and not green) or (k == 3 and green)
+                lamp(c, 98 + k * 20, 34, 8, on, GREEN if k == 3 else RED)
+        if st.offroad_t > 0 and st.stranded_t <= 0:
+            if int(st.offroad_t * 4) % 2 == 0:
+                pygame.draw.rect(c, AMBER, (0, 10, W, 118), 2)
+            text_c(c, "OFF THE ROAD", 128, 54, AMBER)
+            bar(c, 88, 64, 80, 5, max(0.0, 1 - st.offroad_t / 5), RED)
+        if st.stranded_t > 0:
+            text_c(c, "STRANDED", 128, 54, RED, 2)
+
+
+def bar_v(c, x, y, w, h, frac, col):
+    c.fill(GREY, (x - 1, y - 1, w + 2, h + 2))
+    c.fill(PANEL, (x, y, w, h))
+    fill = int(h * max(0.0, min(1.0, frac)))
+    c.fill(col, (x, y + h - fill, w, fill))
+
+
+VARIANTS = [VariantD(), VariantA(), VariantB(), VariantC()]
+
+EXTRA_CIRCUITS = [  # placeholder outlines, unit square, hand-drawn
+    ("HILLTOP", 103.10, [(0.1, 0.8), (0.1, 0.3), (0.3, 0.1), (0.5, 0.25), (0.7, 0.1), (0.9, 0.2), (0.85, 0.5), (0.6, 0.55), (0.75, 0.85), (0.4, 0.9)]),
+    ("OLD AIRFIELD", 91.62, [(0.2, 0.9), (0.05, 0.6), (0.2, 0.15), (0.55, 0.1), (0.95, 0.3), (0.8, 0.5), (0.55, 0.45), (0.5, 0.7), (0.8, 0.85)]),
+]
 
 
 # ---------------------------------------------------------------- other screens
@@ -866,8 +944,34 @@ def car_select(c, v, st):
         bar(c, tx + 64, y + 34, bw, 5, dur, GREEN)
 
 
+def circuit_cards(c, v, st):
+    W, H = v.W, v.H
+    c.fill(BLACK)
+    text_c(c, "CHOOSE A CIRCUIT", W // 2, 4, WHITE)
+    circuits = [("PARKLANDS", st.record, st.track.outline)] + EXTRA_CIRCUITS
+    cw = W // 3
+    for k, (name, record, outline) in enumerate(circuits):
+        x0, y0 = k * cw, 18
+        if k == st.circuit:
+            pygame.draw.rect(c, AMBER, (x0 + 2, y0, cw - 4, 128), 1)
+        box = cw - 16
+        pts = [(x0 + 8 + x * box, y0 + 8 + y * box) for x, y in outline]
+        pygame.draw.lines(c, WHITE, True, pts, 1)
+        sx, sy = pts[0]
+        for q in range(4):
+            c.fill(WHITE if q % 2 else BLACK, (int(sx) - 4 + q * 2, int(sy) - 2, 2, 2))
+            c.fill(BLACK if q % 2 else WHITE, (int(sx) - 4 + q * 2, int(sy), 2, 2))
+        text_c(c, name, x0 + cw // 2, y0 + box + 14, WHITE if k == st.circuit else GREY)
+        text_c(c, fmt_time(record), x0 + cw // 2, y0 + box + 24, AMBER)
+    text_c(c, "LAP RECORDS IN AMBER", W // 2, H - 30, GREY)
+    text_c(c, f"LAPS  < {st.laps:2d} >", W // 2, H - 18, WHITE)
+
+
 def circuit_select(c, v, st, t):
     W, H = v.W, v.H
+    if v.map_style == "cards":
+        circuit_cards(c, v, st)
+        return
     c.fill(BLACK)
     text_c(c, "< PROTOTYPE PARK >", W // 2, 4, WHITE)
     box = min(W - 20, H - 50)
@@ -903,7 +1007,7 @@ BAR_H = 34
 
 class App:
     def __init__(self, shots=None):
-        self.vi, self.pi = 0, 0
+        self.vi, self.pi = 0, 1
         self.fullscreen = False
         self.shots = shots
         self.track = Track()
@@ -962,7 +1066,7 @@ class App:
         ox = (ww - big.get_width()) // 2
         oy = (wh - BAR_H - big.get_height()) // 2 if not self.fullscreen else (wh - big.get_height()) // 2
         self.win.blit(big, (ox, max(0, oy)))
-        label = (f"<  {'ABC'[self.vi]}: {v.name}  |  {v.W}x{v.H} x{self.scale}  |  "
+        label = (f"<  {'DABC'[self.vi]}: {v.name}  |  {v.W}x{v.H} x{self.scale}  |  "
                  f"{pal_name.split(' (')[0]}, {colour_count(PALETTES[pal_name])} colours  >")
         img = self.font.render(label, True, (20, 20, 20))
         pill = pygame.Rect(0, 0, img.get_width() + 24, BAR_H - 8)
@@ -996,6 +1100,8 @@ class App:
             st.faults = not st.faults
         elif k == pygame.K_o:
             st.pit_t = 0.0
+        elif k in (pygame.K_UP, pygame.K_DOWN) and st.screen == "circuit":
+            st.circuit = (st.circuit + (1 if k == pygame.K_DOWN else -1)) % 3
         elif k in (pygame.K_UP, pygame.K_DOWN) and st.screen == "car":
             st.car = (st.car + (1 if k == pygame.K_DOWN else -1)) % 3
         elif k == pygame.K_j and st.gear > 0 and not CARS[st.car][1]:
@@ -1053,12 +1159,12 @@ class App:
                     for k in range(int(st.z // SEG)):
                         st.sky_off += self.track.segs[k].curve * 40
                     self.draw()
-                    pygame.image.save(self.win, f"{self.shots}/{'ABC'[vi]}{pi}_{label}.png")
+                    pygame.image.save(self.win, f"{self.shots}/{'DABC'[vi]}{pi}_{label}.png")
                 for scr in ("car", "circuit"):
                     self.st = State(self.track)
                     self.st.screen = scr
                     self.draw()
-                    pygame.image.save(self.win, f"{self.shots}/{'ABC'[vi]}{pi}_{scr}.png")
+                    pygame.image.save(self.win, f"{self.shots}/{'DABC'[vi]}{pi}_{scr}.png")
 
 
 def main():
