@@ -360,7 +360,7 @@ def hazard_shapes(kind, length, width, rng):
         z, x = rng.uniform(0, length), rng.uniform(-width / 2, width / 2)
         if kind == "glass":
             r = rng.uniform(0.08, 0.2)
-            col = WHITE if k % 2 else SKY_LOW  # noqa: F821
+            col = -(k + 1)
             out.append((col, [(z, x - r), (z + r * 1.6, x + r * 0.3), (z - r * 0.4, x + r)]))
         else:
             rz, rx = rng.uniform(0.2, 0.6), rng.uniform(0.2, 0.7)
@@ -671,7 +671,17 @@ def render_road(c, v, st, sprites, skyline):
     for seg, P, clip in reversed(queue):
         c.set_clip((0, 0, W, int(clip)))
         for col, pts in seg.hazards:
-            pygame.draw.polygon(c, col, [P(t, x) for t, x in pts])
+            screen = [P(t, x) for t, x in pts]
+            glint = False
+            if col < 0:
+                glint = (int(st.z * 1.5) - col) % 4 == 0
+                col = WHITE if glint else SKY_LOW
+            pygame.draw.polygon(c, col, screen)
+            if glint:
+                gx = sum(p[0] for p in screen) / 3
+                gy = sum(p[1] for p in screen) / 3
+                pygame.draw.line(c, WHITE, (gx - 2, gy), (gx + 2, gy))
+                pygame.draw.line(c, WHITE, (gx, gy - 2), (gx, gy + 2))
     c.set_clip(None)
 
     for seg, P, clip in reversed(queue):
@@ -934,8 +944,8 @@ class VariantD:
                 inset = 3 + (rad - math.sqrt(max(0, rad * rad - (rad - y) ** 2)) if y < rad else 0)
                 pygame.draw.line(tyre, COWL_HI, (inset, y), (43 - inset, y))
             c.blit(tyre, (cx - 22, 100))
-        top = [(x, 116 + 0.0014 * (x - 128) ** 2) for x in range(8, 249, 8)]
-        pygame.draw.polygon(c, body, top + [(248, 192), (8, 192)])
+        top = [(x, 116 + 0.0014 * (x - 128) ** 2) for x in range(0, 257, 8)]
+        pygame.draw.polygon(c, body, top + [(256, 192), (0, 192)])
         pygame.draw.lines(c, hi, False, top)
         pygame.draw.rect(c, COWL_HI, (56, 130, 144, 70), border_top_left_radius=30, border_top_right_radius=30)
         pygame.draw.rect(c, BLACK, (56, 130, 144, 70), 1, border_top_left_radius=30, border_top_right_radius=30)
