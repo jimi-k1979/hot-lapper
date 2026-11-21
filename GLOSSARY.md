@@ -118,8 +118,12 @@ How far the car is from the centre line of the road, across its width. Steering 
 _Avoid_: x, offset, lane
 
 **Off the road**:
-The state of a car with one whole tyre width past the edge of the road. Off the road the car is slowed heavily and the warning sound plays.
+The state of a car with one whole tyre width past the edge of the road. Off the road the car is slowed heavily.
 _Avoid_: off track, on the grass, offroad
+
+**At the limit**:
+The state of a car cornering so fast that the outward push of the corner is close to the most its steering can hold. The tyres squeal while the car is at the limit.
+_Avoid_: sliding, skidding, drifting
 
 **Stranded timer**:
 How long the car has been off the road without a break. It resets the moment the car is back on the road.
