@@ -1,0 +1,61 @@
+[project]
+name = "hot-lapper"
+version = "0.1.0"
+description = "An original cockpit-view, single-seater racing game against the clock."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pygame-ce>=2.5.8",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "hotlapper"
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.170.17",
+    "import-linter>=2.17",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "ruff>=0.17.6",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "SIM", "RUF", "PT", "N"]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+files = ["src", "tests"]
+
+[tool.importlinter]
+root_package = "hotlapper"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Layers"
+type = "layers"
+layers = [
+    "hotlapper.__main__",
+    "hotlapper.adapters",
+    "hotlapper.application",
+    "hotlapper.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Pygame stays out of the core"
+type = "forbidden"
+source_modules = ["hotlapper.domain", "hotlapper.application"]
+forbidden_modules = ["pygame"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--strict-markers", "--strict-config"]
