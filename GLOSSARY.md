@@ -1,6 +1,6 @@
 # Glossary
 
-Domain language for **Hot Lapper** (working title), a cockpit-view single-seater racing game.
+Domain language for **Hot Lapper**, a cockpit-view single-seater racing game.
 
 ## Cars
 
