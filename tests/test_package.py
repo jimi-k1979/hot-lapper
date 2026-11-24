@@ -1,5 +1,5 @@
-import hotlapper
+import importlib
 
 
 def test_package_imports() -> None:
-    assert hotlapper.__name__ == "hotlapper"
+    importlib.import_module("hotlapper")

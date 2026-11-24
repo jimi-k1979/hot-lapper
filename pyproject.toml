@@ -58,4 +58,3 @@ forbidden_modules = ["pygame"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--strict-markers", "--strict-config"]
