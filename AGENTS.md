@@ -2,7 +2,7 @@
 
 ## Project
 
-**Hot Lapper** (working title) is an original cockpit-view, single-seater racing game in Python. It is influenced by Psion's *Chequered Flag* for the ZX Spectrum but is not a port of it. The design is being charted in [Hot Lapper: charting the MVP spec](https://github.com/jimi-k1979/pyCheq/issues/1). Use the domain vocabulary in `GLOSSARY.md`.
+**Hot Lapper** is an original cockpit-view, single-seater racing game in Python. It is influenced by Psion's *Chequered Flag* for the ZX Spectrum but is not a port of it. The design is being charted in [Hot Lapper: charting the MVP spec](https://github.com/jimi-k1979/pyCheq/issues/1). Use the domain vocabulary in `GLOSSARY.md`.
 
 ### Decisions already made
 
