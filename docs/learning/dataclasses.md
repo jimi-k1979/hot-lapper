@@ -3,7 +3,7 @@
 `@dataclass` writes `__init__`, `__repr__` and `__eq__` for you from the class's annotated fields. Two options turn it into a good value type:
 
 - **`frozen=True`**: assigning to a field after construction raises `FrozenInstanceError`. To "change" a value you build a new one, usually with `dataclasses.replace(old, field=new)`. Frozen instances are also hashable.
-- **`slots=True`**: the class gets `__slots__` instead of a per-instance `__dict__`. Instances are smaller and faster, and a typo such as `controls.brakes = True` fails instead of quietly adding a new attribute.
+- **`slots=True`**: the class gets `__slots__` instead of a per-instance `__dict__`. Instances are smaller and faster, and, even on a class that isn't frozen, a typo such as `point.z = 1` fails instead of quietly adding a new attribute.
 
 ```python
 @dataclass(frozen=True, slots=True)

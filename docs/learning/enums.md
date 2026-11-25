@@ -22,7 +22,7 @@ class Colour(IntEnum):
 ## Why here
 
 - `Command` is the set of edge commands the keyboard can report. Strings would allow typos, and bare ints would be meaningless.
-- `Colour` is the palette, and here the values *do* matter: each is the index into the 16-colour palette of the 8-bit canvas. Because `Colour.AMBER` is an `int`, pygame can fill with it directly, while the core still reads it by name. Iterating `for colour in Colour` goes in value order, which is how the display adapter builds the palette list.
+- `Colour` is the palette, and here the values *do* matter: each is the index into the 16-colour palette of the 8-bit canvas. Because `Colour.AMBER` is an `int`, pygame can fill with it directly, while the core still reads it by name. Iterating `for colour in Colour` goes in definition order, which here is also index order. That is how the display adapter builds the palette list.
 
 ## In the code
 

@@ -12,12 +12,11 @@ The kinds of pattern used so far:
 
 - **Class patterns**, `TitleFrame(background=background)`: does the value pass `isinstance(frame, TitleFrame)`? If so, bind its `background` attribute to a local name. `Title()` with no arguments only checks the type.
 - **Value patterns**, `case pygame.K_ESCAPE:`: a dotted name is compared with `==`. A bare name such as `case escape:` would instead *capture* anything into a new variable, which is why constants must be dotted.
-- **Sequence patterns**, `case [TitleFrame(...)]`: matches a sequence of exactly that shape.
-- **Wildcard**, `case _:`: matches anything.
+- **Wildcard**, `case _:`: matches anything. After every member of a union has been matched, `case _: assert_never(frame)` asks mypy to prove that the wildcard can never be reached.
 
 ## Why here
 
-The screen flow and the renderer both branch on *which kind* of screen or frame they have. Today there is one kind, but `Screen` and `Frame` are unions that will grow. When a new member is added, mypy reports each `match` that no longer covers every case and so can fall off the end without returning. That makes it hard to forget a branch. The keyboard adapter uses `match` to turn key codes into commands.
+The screen flow and the renderer both branch on *which kind* of screen or frame they have. Today there is one kind, but `Screen` and `Frame` are unions that will grow. When a new member is added, mypy reports each `match` that no longer covers it. In `transition` and `frame_for`, an unhandled case would fall off the end without returning a value, which is an error. `present` returns nothing, so it ends with `assert_never` instead. Either way, it is hard to forget a branch. The keyboard adapter uses `match` to turn key codes into commands.
 
 ## In the code
 

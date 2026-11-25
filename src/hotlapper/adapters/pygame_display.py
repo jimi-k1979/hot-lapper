@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Final, Self
+from typing import Final, Self, assert_never
 
 import pygame
 
@@ -71,6 +71,8 @@ class PygameDisplay:
                 for text in texts:
                     for rect in glyph_rects(text.string, text.x, text.y, text.scale):
                         self._canvas.fill(text.colour, rect)
+            case _:
+                assert_never(frame)
         self._show_canvas()
         self._pacer.tick(FRAMES_PER_SECOND)
 

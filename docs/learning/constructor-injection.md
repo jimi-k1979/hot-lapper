@@ -21,7 +21,7 @@ There is no framework or container. Wiring by hand in one place is enough for a 
 
 ## Why here
 
-The tests build the same `Game` with a `FakeClock`, a `ScriptedKeyboard` and a `RecordingRenderer`. That runs the real loop headlessly, with time moving only when the test calls `clock.advance(...)`. import-linter keeps `__main__` as the only module allowed to import both the adapters and the application.
+The tests build the same `Game` with a `FakeClock`, a `ScriptedKeyboard` and a `RecordingRenderer`. That runs the real loop headlessly, with time moving only when the test calls `clock.advance(...)`. Only `__main__` constructs the adapters and hands them to the application. import-linter's layers contract keeps the arrows pointing inwards: the application can never import an adapter.
 
 ## In the code
 

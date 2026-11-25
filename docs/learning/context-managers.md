@@ -1,6 +1,6 @@
 # Context managers
 
-A `with` block guarantees that clean-up runs however the block is left: by falling off the end, by `return` or by an exception.
+A `with` block guarantees that clean-up runs however the block is left, once it has been entered: by falling off the end, by `return` or by an exception.
 
 ```python
 with PygameDisplay() as display:
@@ -10,7 +10,7 @@ with PygameDisplay() as display:
 Any class with two special methods works:
 
 - `__enter__(self)` runs at the start of the block. Its return value is what `as` binds.
-- `__exit__(self, exc_type, exc, traceback)` always runs at the end. The three arguments describe the exception that is propagating, or are all `None`. Returning nothing (`None`) lets any exception carry on.
+- `__exit__(self, exc_type, exc, traceback)` runs at the end, whenever `__enter__` has returned successfully. The three arguments describe the exception that is propagating, or are all `None`. Returning nothing (`None`) lets any exception carry on.
 
 ## `Self`
 
