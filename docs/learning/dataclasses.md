@@ -26,4 +26,5 @@ The loop uses `replace` to clear the edge commands after the first step: `replac
 - [`domain/controls.py`](../../src/hotlapper/domain/controls.py): `Controls`
 - [`domain/frame.py`](../../src/hotlapper/domain/frame.py): `Text` and `TitleFrame`
 - [`application/screens.py`](../../src/hotlapper/application/screens.py): the `Title` screen state
+- [`domain/circuit.py`](../../src/hotlapper/domain/circuit.py): `Straight`, `Corner`, `Segment` and `Circuit`, whose `length` is a `@property` worked out from its segments
 - [`application/loop.py`](../../src/hotlapper/application/loop.py): `replace`
