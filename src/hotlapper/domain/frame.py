@@ -31,22 +31,11 @@ class Line:
 
 
 @dataclass(frozen=True, slots=True)
-class Bar:
-    x: int
-    y: int
-    width: int
-    height: int
-    fraction: float
-    colour: Colour
-
-
-@dataclass(frozen=True, slots=True)
 class MenuFrame:
     background: Colour
     texts: tuple[Text, ...]
     boxes: tuple[Box, ...] = ()
     lines: tuple[Line, ...] = ()
-    bars: tuple[Bar, ...] = ()
 
 
 type Frame = MenuFrame

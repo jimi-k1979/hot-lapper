@@ -10,8 +10,8 @@ from hotlapper.application.screens import (
 )
 from hotlapper.domain.controls import Command
 from hotlapper.domain.font import GLYPHS
-from hotlapper.domain.frame import Frame, MenuFrame
-from hotlapper.domain.menus import Answer, TitleItem
+from hotlapper.domain.frame import Box, Frame, MenuFrame
+from hotlapper.domain.menus import BAR_HEIGHT, Answer, TitleItem
 from hotlapper.domain.palette import Colour
 from tests.fakes import FakeClock, RecordingRenderer, ScriptedKeyboard, make_circuit
 
@@ -166,6 +166,24 @@ def test_esc_on_car_select_returns_to_circuit_select(player: Player) -> None:
     assert player.game.screen == CircuitSelect(Choices(car=1))
 
 
+@pytest.mark.parametrize(
+    "route",
+    [
+        pytest.param([], id="title"),
+        pytest.param([DOWN, ENTER], id="reset confirmation"),
+        pytest.param([ENTER], id="circuit select"),
+        pytest.param([ENTER, ENTER], id="lap count"),
+        pytest.param([ENTER, ENTER, ENTER], id="car select"),
+    ],
+)
+def test_closing_the_window_quits_from_every_menu(
+    player: Player, route: list[Command]
+) -> None:
+    player.press(*route, Command.QUIT)
+
+    assert not player.game.running
+
+
 def test_last_choices_are_remembered_between_visits(player: Player) -> None:
     player.press(ENTER, RIGHT, RIGHT, ENTER, LEFT, ENTER, DOWN, ESC, ESC)
     choices = Choices(circuit=2, laps=2, car=1)
@@ -242,6 +260,28 @@ def test_each_circuit_map_is_a_thin_white_closed_outline(player: Player) -> None
     assert first_map[-1].end == first_map[0].start
 
 
+def test_each_circuit_map_has_a_chequered_marker_at_its_start(
+    player: Player,
+) -> None:
+    player.press(ENTER)
+    frame = menu(player)
+
+    for line in frame.lines[::3]:
+        [marker] = [box for box in frame.boxes if inside(line.start, box)]
+        squares = [
+            box
+            for box in frame.boxes
+            if box.colour is Colour.BLACK and inside((box.x, box.y), marker)
+        ]
+        assert marker.colour is Colour.WHITE
+        assert len(squares) == 4
+
+
+def inside(point: tuple[int, int], box: Box) -> bool:
+    x, y = point
+    return box.x <= x < box.x + box.width and box.y <= y < box.y + box.height
+
+
 def test_the_lap_count_prompt_shows_the_count_on_circuit_select(
     player: Player,
 ) -> None:
@@ -265,9 +305,16 @@ def test_car_select_shows_each_car_with_its_bars(player: Player) -> None:
         index = strings(frame).index(name)
         assert strings(frame)[index + 1] == transmission
     assert "KESTREL" in highlighted(frame)
-    assert [bar.fraction for bar in frame.bars] == pytest.approx(
-        [70 / 95, 1, 70 / 77, 80 / 120, 1, 50 / 120]
-    )
+    assert bar_fills(frame, Colour.AMBER) == [66, 82, 90]
+    assert bar_fills(frame, Colour.LIGHT_GREEN) == [90, 60, 38]
+
+
+def bar_fills(frame: MenuFrame, colour: Colour) -> list[int]:
+    return [
+        box.width
+        for box in frame.boxes
+        if box.colour is colour and box.height == BAR_HEIGHT
+    ]
 
 
 def test_each_car_picture_is_drawn_in_its_colour(player: Player) -> None:

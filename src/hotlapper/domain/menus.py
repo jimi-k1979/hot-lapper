@@ -6,7 +6,7 @@ from hotlapper.domain.canvas import CANVAS_WIDTH
 from hotlapper.domain.car import CAR_ROSTER, Car, durability, pace
 from hotlapper.domain.circuit import Circuit
 from hotlapper.domain.font import ADVANCE, text_width
-from hotlapper.domain.frame import Bar, Box, Line, MenuFrame, Pixel, Text
+from hotlapper.domain.frame import Box, Line, MenuFrame, Pixel, Text
 from hotlapper.domain.palette import Colour
 
 
@@ -128,7 +128,6 @@ def circuit_select_frame(
 def car_select_frame(selected: int) -> MenuFrame:
     texts = [_centred("CHOOSE A CAR", 4, Colour.WHITE)]
     boxes: list[Box] = []
-    bars: list[Bar] = []
     for index, car in enumerate(CAR_ROSTER):
         y = ROW_TOP + index * ROW_HEIGHT
         if index == selected:
@@ -142,23 +141,17 @@ def car_select_frame(selected: int) -> MenuFrame:
             Text(DETAILS_X, y + 33, "DURABILITY", UNSELECTED),
             Text(8, y + 45, car.description, UNSELECTED),
         ]
-        bars += [
-            Bar(BAR_X, y + 25, BAR_WIDTH, BAR_HEIGHT, pace(car), Colour.AMBER),
-            Bar(
-                BAR_X,
-                y + 34,
-                BAR_WIDTH,
-                BAR_HEIGHT,
-                durability(car),
-                Colour.LIGHT_GREEN,
-            ),
-        ]
-    return MenuFrame(
-        background=Colour.BLACK,
-        texts=tuple(texts),
-        boxes=tuple(boxes),
-        bars=tuple(bars),
-    )
+        boxes += _bar(y + 25, pace(car), Colour.AMBER)
+        boxes += _bar(y + 34, durability(car), Colour.LIGHT_GREEN)
+    return MenuFrame(background=Colour.BLACK, texts=tuple(texts), boxes=tuple(boxes))
+
+
+def _bar(y: int, fraction: float, colour: Colour) -> list[Box]:
+    return [
+        Box(BAR_X - 1, y - 1, BAR_WIDTH + 2, BAR_HEIGHT + 2, Colour.MID_GREY),
+        Box(BAR_X, y, BAR_WIDTH, BAR_HEIGHT, Colour.BLACK),
+        Box(BAR_X, y, round(BAR_WIDTH * fraction), BAR_HEIGHT, colour),
+    ]
 
 
 def _highlight(selected: bool) -> Colour:

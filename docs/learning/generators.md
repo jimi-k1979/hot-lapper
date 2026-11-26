@@ -24,4 +24,5 @@ Turning text into lit pixels is font knowledge, so it belongs in the domain (ADR
 ## In the code
 
 - [`domain/font.py`](../../src/hotlapper/domain/font.py): `glyph_rects`
+- [`domain/menus.py`](../../src/hotlapper/domain/menus.py): `_chequer` and `_picture`, yielding boxes
 - [`adapters/pygame_display.py`](../../src/hotlapper/adapters/pygame_display.py): `present`

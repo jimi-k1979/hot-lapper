@@ -38,6 +38,8 @@ So `Side("left")` turns the text in a circuit file into a member, and `"left" in
 ## In the code
 
 - [`domain/controls.py`](../../src/hotlapper/domain/controls.py): `Command`
+- [`domain/menus.py`](../../src/hotlapper/domain/menus.py): `TitleItem` and `Answer`
+- [`domain/car.py`](../../src/hotlapper/domain/car.py): `Transmission`
 - [`domain/palette.py`](../../src/hotlapper/domain/palette.py): `Colour`
 - [`adapters/pygame_display.py`](../../src/hotlapper/adapters/pygame_display.py): `EARTHY` and `set_palette`
 - [`domain/circuit.py`](../../src/hotlapper/domain/circuit.py): `Side`, `HazardKind` and `SceneryKind`
