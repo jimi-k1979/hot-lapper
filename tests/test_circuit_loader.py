@@ -143,3 +143,17 @@ def test_every_packaged_circuit_loads() -> None:
     circuits = load_circuits()
 
     assert len({circuit.circuit_id for circuit in circuits}) == len(circuits)
+
+
+def test_westwood_aerodrome_is_a_flat_4780_m_circuit() -> None:
+    westwood = next(
+        circuit
+        for circuit in load_circuits()
+        if circuit.circuit_id == "westwood-aerodrome"
+    )
+
+    assert westwood.name == "Westwood Aerodrome"
+    assert westwood.length == 4780
+    assert max(abs(segment.height) for segment in westwood.segments) <= 2
+    assert 5 <= len(westwood.hazards) <= 8
+    assert 12 <= len(westwood.outline) <= 30
