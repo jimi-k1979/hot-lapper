@@ -10,6 +10,9 @@ Short explainers for the Python features Hot Lapper uses. Each one is written in
 - [`type` aliases](type-aliases.md): naming `Seconds`, `Frame` and `Screen`
 - [Constructor injection](constructor-injection.md): wiring the game in one composition root
 - [Context managers](context-managers.md): the pygame display's lifecycle, and `Self`
-- [Enums](enums.md): commands and palette colours
+- [Enums](enums.md): commands, palette colours and the words in circuit files
 - [`Final`](final.md): constants mypy won't let you reassign
+- [Generic functions](generics.md): one typed `choice` for every enum a circuit file uses
+- [Exception chaining](exception-chaining.md): `raise ... from`, and naming the circuit file in a `CircuitDataError`
+- [Hypothesis](hypothesis.md): property tests for segment lookup round the loop
 - [Generators](generators.md): the font yielding pixel rectangles

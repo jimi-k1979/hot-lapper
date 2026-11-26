@@ -22,4 +22,5 @@ An alias is not a new type. Any `float` is accepted where `Seconds` is expected.
 - [`application/screens.py`](../../src/hotlapper/application/screens.py): `Screen`
 - [`domain/frame.py`](../../src/hotlapper/domain/frame.py): `Frame`
 - [`domain/font.py`](../../src/hotlapper/domain/font.py): `Rect`
+- [`domain/circuit.py`](../../src/hotlapper/domain/circuit.py): `Metres`, `Point` and the `Section` union
 - [`adapters/pygame_display.py`](../../src/hotlapper/adapters/pygame_display.py): `RGB`
