@@ -21,6 +21,8 @@ A `Controls` snapshot is shared by every fixed step in a tick, and a `Frame` is 
 
 The loop uses `replace` to clear the edge commands after the first step: `replace(controls, commands=())`.
 
+A frozen dataclass can still have values that are worked out rather than stored. `@property` makes a method read like an attribute. `circuit.length` is worked out from the segments each time, so it can never disagree with them.
+
 ## In the code
 
 - [`domain/controls.py`](../../src/hotlapper/domain/controls.py): `Controls`

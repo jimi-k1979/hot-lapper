@@ -17,6 +17,8 @@ hotlapper.domain.circuit.CircuitDataError: hazards[2].across: is not wholly on t
 in circuit file riverside.toml
 ```
 
+The loader turns a TOML syntax error into a `CircuitDataError` with `raise CircuitDataError(...) from error`. The `from` *chains* the two: the new exception keeps the original on its `__cause__`, and the traceback shows both, joined by "The above exception was the direct cause of the following exception".
+
 ## Why here
 
 Every bad circuit must stop the game with one `CircuitDataError` naming the file and the field. The domain knows the field but has never heard of files, and it shouldn't. The loader knows the file. So the domain raises the error with the field, and the loader adds the file as a note on the way out. That covers both its own shape errors and the domain's rule errors, without wrapping one exception in another.

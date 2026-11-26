@@ -13,7 +13,6 @@ The kinds of pattern used so far:
 - **Class patterns**, `TitleFrame(background=background)`: does the value pass `isinstance(frame, TitleFrame)`? If so, bind its `background` attribute to a local name. `Title()` with no arguments only checks the type.
 - **Value patterns**, `case pygame.K_ESCAPE:`: a dotted name is compared with `==`. A bare name such as `case escape:` would instead *capture* anything into a new variable, which is why constants must be dotted.
 - **Wildcard**, `case _:`: matches anything. After every member of a union has been matched, `case _: assert_never(frame)` asks mypy to prove that the wildcard can never be reached.
-
 - **Keyword captures**, `Corner(turn=turn, radius=radius)`: pull several attributes out at once.
 - **Guards**, `case Corner(radius=radius) if radius < ARROW_RADIUS:`: the case matches only if the pattern fits *and* the condition is true.
 - **Enum members**, `case _SectionKind.STRAIGHT:`: a dotted value pattern. mypy knows when every member has been covered, just as it does for a union.

@@ -23,7 +23,7 @@ from hotlapper.domain.circuit import (
     build_circuit,
 )
 
-PACKAGED: Final = files("hotlapper.adapters.circuits")
+PACKAGED_CIRCUITS: Final = files("hotlapper.adapters.circuits")
 
 
 class _SectionKind(StrEnum):
@@ -59,7 +59,7 @@ class _Table:
     def number(self, key: str) -> float:
         return _number(self._get(key), self._field(key))
 
-    def segments(self, key: str) -> float:
+    def whole_segments(self, key: str) -> float:
         value = self.number(key)
         if value < 0 or value % SEGMENT_LENGTH:
             raise CircuitDataError(
@@ -121,7 +121,7 @@ def _number(value: object, field: str) -> float:
     return float(value)
 
 
-def load_circuits(directory: Traversable = PACKAGED) -> list[Circuit]:
+def load_circuits(directory: Traversable = PACKAGED_CIRCUITS) -> list[Circuit]:
     circuits = [
         load_circuit(path)
         for path in directory.iterdir()
@@ -138,7 +138,7 @@ def load_circuit(path: Traversable) -> Circuit:
         raise
 
 
-def _read(path: Traversable) -> "_Table":
+def _read(path: Traversable) -> _Table:
     with path.open("rb") as file:
         try:
             return _Table(tomllib.load(file))
@@ -177,15 +177,15 @@ def _section(table: _Table) -> Section:
     match table.choice("kind", _SectionKind):
         case _SectionKind.STRAIGHT:
             table.only("kind", "length", "climb")
-            return Straight(length=table.segments("length"), climb=climb)
+            return Straight(length=table.whole_segments("length"), climb=climb)
         case _SectionKind.CORNER:
             table.only("kind", "turn", "radius", "enter", "hold", "leave", "climb")
             return Corner(
                 turn=table.choice("turn", Side),
                 radius=table.number("radius"),
-                enter=table.segments("enter"),
-                hold=table.segments("hold"),
-                leave=table.segments("leave"),
+                enter=table.whole_segments("enter"),
+                hold=table.whole_segments("hold"),
+                leave=table.whole_segments("leave"),
                 climb=climb,
             )
 
