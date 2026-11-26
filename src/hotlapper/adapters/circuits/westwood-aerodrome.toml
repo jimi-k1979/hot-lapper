@@ -1,0 +1,272 @@
+# Layout based on Silverstone's 1987-90 Bridge-chicane circuit, run clockwise.
+
+name = "Westwood Aerodrome"
+order = 1
+width = 12
+skyline = "airfield"
+outline = [
+    [0.01, 0.516], [0.01, 0.319], [0.028, 0.263], [0.083, 0.242],
+    [0.315, 0.225], [0.394, 0.205], [0.467, 0.173], [0.535, 0.201],
+    [0.596, 0.288], [0.962, 0.524], [1.0, 0.573], [0.988, 0.633],
+    [0.907, 0.78], [0.859, 0.827], [0.792, 0.824], [0.597, 0.758],
+    [0.548, 0.747], [0.499, 0.752], [0.348, 0.781], [0.294, 0.786],
+    [0.241, 0.774], [0.13, 0.737], [0.104, 0.749], [0.071, 0.763],
+    [0.004, 0.683], [0.0, 0.632],
+]
+
+[pit_area]
+side = "right"
+at = 20
+length = 100
+
+[[sections]]
+kind = "straight"
+length = 335
+
+# Thicket
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 110
+enter = 40
+hold = 125
+leave = 40
+
+[[sections]]
+kind = "straight"
+length = 395
+
+# Magpie
+[[sections]]
+kind = "corner"
+turn = "left"
+radius = 320
+enter = 30
+hold = 80
+leave = 30
+
+[[sections]]
+kind = "straight"
+length = 135
+
+# Beckford
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 75
+enter = 25
+hold = 95
+leave = 25
+
+[[sections]]
+kind = "straight"
+length = 45
+
+# Chantry
+[[sections]]
+kind = "corner"
+turn = "left"
+radius = 180
+enter = 30
+hold = 80
+leave = 30
+
+# Runway Straight
+[[sections]]
+kind = "straight"
+length = 740
+
+# Stoney
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 120
+enter = 35
+hold = 145
+leave = 35
+
+# Valley
+[[sections]]
+kind = "straight"
+length = 285
+
+# Pavilion
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 140
+enter = 40
+hold = 155
+leave = 40
+
+[[sections]]
+kind = "straight"
+length = 350
+
+# Cloister
+[[sections]]
+kind = "corner"
+turn = "left"
+radius = 260
+enter = 35
+hold = 100
+leave = 35
+
+[[sections]]
+kind = "straight"
+length = 260
+
+# Arch
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 300
+enter = 30
+hold = 125
+leave = 30
+
+[[sections]]
+kind = "straight"
+length = 200
+
+# Arch Esses, left
+[[sections]]
+kind = "corner"
+turn = "left"
+radius = 30
+enter = 10
+hold = 35
+leave = 10
+
+[[sections]]
+kind = "straight"
+length = 15
+
+# Arch Esses, right
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 28
+enter = 10
+hold = 45
+leave = 10
+
+[[sections]]
+kind = "straight"
+length = 90
+
+# Woodside
+[[sections]]
+kind = "corner"
+turn = "right"
+radius = 160
+enter = 35
+hold = 105
+leave = 35
+
+[[sections]]
+kind = "straight"
+length = 200
+
+# Thicket braking zone
+[[hazards]]
+kind = "oil"
+at = 275
+across = -2
+length = 10
+width = 2.5
+
+# Beckford exit
+[[hazards]]
+kind = "debris"
+at = 1360
+across = -3
+length = 5
+width = 2
+
+# Stoney braking zone
+[[hazards]]
+kind = "glass"
+at = 2225
+across = -2
+length = 5
+width = 1.5
+
+# Pavilion exit
+[[hazards]]
+kind = "water"
+at = 3020
+across = -3
+length = 15
+width = 3
+
+# Cloister exit
+[[hazards]]
+kind = "oil"
+at = 3545
+across = 3
+length = 10
+width = 2
+
+# Arch Esses braking zone
+[[hazards]]
+kind = "rocks"
+at = 4140
+across = 3
+length = 5
+width = 1.5
+
+[[scenery]]
+kind = "grandstand"
+at = 60
+across = -20
+
+[[scenery]]
+kind = "grandstand"
+at = 400
+across = -22
+
+[[scenery]]
+kind = "tree"
+at = 1100
+across = 20
+
+[[scenery]]
+kind = "marker_post"
+at = 1700
+across = 14
+
+[[scenery]]
+kind = "barn"
+at = 1900
+across = 28
+
+[[scenery]]
+kind = "marker_post"
+at = 2100
+across = -14
+
+[[scenery]]
+kind = "bush"
+at = 3200
+across = -16
+
+[[scenery]]
+kind = "tree"
+at = 3450
+across = 22
+
+[[scenery]]
+kind = "grandstand"
+at = 4270
+across = -20
+
+[[scenery]]
+kind = "grandstand"
+at = 4500
+across = -22
+
+[[scenery]]
+kind = "grandstand"
+at = 4700
+across = -20

@@ -2,7 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from hotlapper.adapters.circuit_loader import load_circuit, load_circuits
+from hotlapper.adapters.circuit_loader import (
+    PACKAGED_CIRCUITS,
+    load_circuit,
+    load_circuits,
+)
 from hotlapper.domain.circuit import (
     CircuitDataError,
     Hazard,
@@ -143,3 +147,13 @@ def test_every_packaged_circuit_loads() -> None:
     circuits = load_circuits()
 
     assert len({circuit.circuit_id for circuit in circuits}) == len(circuits)
+
+
+def test_westwood_aerodrome_is_a_flat_4780_m_circuit() -> None:
+    westwood = load_circuit(PACKAGED_CIRCUITS / "westwood-aerodrome.toml")
+
+    assert westwood.name == "Westwood Aerodrome"
+    assert westwood.length == 4780
+    assert all(segment.height == 0 for segment in westwood.segments)
+    assert 5 <= len(westwood.hazards) <= 8
+    assert 12 <= len(westwood.outline) <= 30
