@@ -134,8 +134,7 @@ def load_circuit(path: Traversable) -> Circuit:
     try:
         return _circuit(path.name.removesuffix(".toml"), _read(path))
     except CircuitDataError as error:
-        error.add_note(f"in circuit file {path.name}")
-        raise
+        raise error.in_file(path.name) from None
 
 
 def _read(path: Traversable) -> _Table:

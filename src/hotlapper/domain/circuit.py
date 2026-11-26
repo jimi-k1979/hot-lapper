@@ -24,9 +24,15 @@ MAX_GRADIENT: Final = 0.1
 
 
 class CircuitDataError(Exception):
-    def __init__(self, field: str, problem: str) -> None:
-        super().__init__(f"{field}: {problem}")
+    def __init__(self, field: str, problem: str, file: str | None = None) -> None:
+        where = f"{file}: " if file else ""
+        super().__init__(f"{where}{field}: {problem}")
         self.field = field
+        self.problem = problem
+        self.file = file
+
+    def in_file(self, file: str) -> "CircuitDataError":
+        return CircuitDataError(self.field, self.problem, file)
 
 
 class Side(StrEnum):
@@ -219,6 +225,8 @@ def _segments(sections: Sequence[Section]) -> tuple[Segment, ...]:
 
 
 def _check_pit_area(pit_area: PitArea, length: Metres) -> None:
+    if pit_area.length <= 0:
+        raise CircuitDataError("pit_area.length", "should be positive")
     if pit_area.at < 0:
         raise CircuitDataError("pit_area.at", "is before the start/finish line")
     if pit_area.at + pit_area.length > length:
@@ -237,6 +245,10 @@ def _check_hazards(
     for index, hazard in enumerate(hazards):
         field = f"hazards[{index}]"
         end = hazard.at + hazard.length
+        if hazard.length <= 0:
+            raise CircuitDataError(f"{field}.length", "should be positive")
+        if hazard.width <= 0:
+            raise CircuitDataError(f"{field}.width", "should be positive")
         if abs(hazard.across) + hazard.width / 2 > width / 2:
             raise CircuitDataError(f"{field}.across", "is not wholly on the road")
         if hazard.at < 0 or end > length:

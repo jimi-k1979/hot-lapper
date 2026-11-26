@@ -113,7 +113,8 @@ def test_badly_shaped_files_are_rejected_naming_the_file_and_field(
         load_circuit(path)
 
     assert caught.value.field == field
-    assert caught.value.__notes__ == ["in circuit file test-park.toml"]
+    assert caught.value.file == "test-park.toml"
+    assert str(caught.value).startswith(f"test-park.toml: {field}: ")
 
 
 def test_rule_failures_also_name_the_file(tmp_path: Path) -> None:
@@ -123,7 +124,9 @@ def test_rule_failures_also_name_the_file(tmp_path: Path) -> None:
         load_circuit(path)
 
     assert caught.value.field == "hazards[0].across"
-    assert caught.value.__notes__ == ["in circuit file test-park.toml"]
+    assert str(caught.value) == (
+        "test-park.toml: hazards[0].across: is not wholly on the road"
+    )
 
 
 def test_a_directory_of_circuits_loads_in_order(tmp_path: Path) -> None:

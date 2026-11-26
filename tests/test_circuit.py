@@ -216,6 +216,8 @@ def oil(at: float, across: float = 0, length: float = 10, width: float = 2) -> H
         pytest.param(oil(995), "hazards[0].at", id="past the end"),
         pytest.param(oil(910), "hazards[0].at", id="on the grid"),
         pytest.param(oil(55), "hazards[0].at", id="in the pit area"),
+        pytest.param(oil(300, length=0), "hazards[0].length", id="no length"),
+        pytest.param(oil(300, width=-2), "hazards[0].width", id="negative width"),
     ],
 )
 def test_hazards_off_the_road_or_in_the_way_are_rejected(
@@ -260,6 +262,8 @@ def test_scenery_beyond_the_outer_limit_is_kept() -> None:
     [
         (PitArea(Side.LEFT, at=-10, length=50), "pit_area.at"),
         (PitArea(Side.LEFT, at=960, length=50), "pit_area.length"),
+        (PitArea(Side.LEFT, at=10, length=-5), "pit_area.length"),
+        (PitArea(Side.LEFT, at=10, length=0), "pit_area.length"),
     ],
 )
 def test_a_pit_area_outside_the_circuit_is_rejected(
