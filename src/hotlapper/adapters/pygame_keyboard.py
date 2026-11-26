@@ -5,6 +5,16 @@ from hotlapper.domain.controls import Command, Controls
 
 def _command_for(key: int) -> Command | None:
     match key:
+        case pygame.K_UP:
+            return Command.UP
+        case pygame.K_DOWN:
+            return Command.DOWN
+        case pygame.K_LEFT:
+            return Command.LEFT
+        case pygame.K_RIGHT:
+            return Command.RIGHT
+        case pygame.K_RETURN:
+            return Command.CONFIRM
         case pygame.K_ESCAPE:
             return Command.BACK
         case pygame.K_F11:

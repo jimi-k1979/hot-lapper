@@ -6,7 +6,7 @@ import pygame
 
 from hotlapper.domain.canvas import CANVAS_HEIGHT, CANVAS_WIDTH
 from hotlapper.domain.font import glyph_rects
-from hotlapper.domain.frame import Frame, TitleFrame
+from hotlapper.domain.frame import Bar, Frame, MenuFrame
 from hotlapper.domain.palette import Colour
 
 type RGB = tuple[int, int, int]
@@ -33,6 +33,8 @@ EARTHY: Final[Mapping[Colour, RGB]] = {
 FRAMES_PER_SECOND: Final = 60
 WINDOW_MARGIN: Final = 64
 BORDER: Final[RGB] = (0, 0, 0)
+BAR_FRAME: Final = Colour.MID_GREY
+BAR_EMPTY: Final = Colour.BLACK
 
 
 def whole_scale(width: int, height: int) -> int:
@@ -66,8 +68,16 @@ class PygameDisplay:
 
     def present(self, frame: Frame) -> None:
         match frame:
-            case TitleFrame(background=background, texts=texts):
+            case MenuFrame(
+                background=background, texts=texts, boxes=boxes, lines=lines, bars=bars
+            ):
                 self._canvas.fill(background)
+                for box in boxes:
+                    self._canvas.fill(box.colour, (box.x, box.y, box.width, box.height))
+                for line in lines:
+                    pygame.draw.line(self._canvas, line.colour, line.start, line.end)
+                for bar in bars:
+                    self._draw_bar(bar)
                 for text in texts:
                     for rect in glyph_rects(text.string, text.x, text.y, text.scale):
                         self._canvas.fill(text.colour, rect)
@@ -75,6 +85,14 @@ class PygameDisplay:
                 assert_never(frame)
         self._show_canvas()
         self._pacer.tick(FRAMES_PER_SECOND)
+
+    def _draw_bar(self, bar: Bar) -> None:
+        self._canvas.fill(
+            BAR_FRAME, (bar.x - 1, bar.y - 1, bar.width + 2, bar.height + 2)
+        )
+        self._canvas.fill(BAR_EMPTY, (bar.x, bar.y, bar.width, bar.height))
+        filled = round(bar.width * bar.fraction)
+        self._canvas.fill(bar.colour, (bar.x, bar.y, filled, bar.height))
 
     def _open_window(self) -> pygame.Surface:
         if self._fullscreen:
