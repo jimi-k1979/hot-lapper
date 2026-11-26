@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from hotlapper.domain.canvas import CANVAS_WIDTH
-from hotlapper.domain.font import text_width
 from hotlapper.domain.palette import Colour
+
+type Pixel = tuple[int, int]
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,18 +15,27 @@ class Text:
 
 
 @dataclass(frozen=True, slots=True)
-class TitleFrame:
+class Box:
+    x: int
+    y: int
+    width: int
+    height: int
+    colour: Colour
+
+
+@dataclass(frozen=True, slots=True)
+class Line:
+    start: Pixel
+    end: Pixel
+    colour: Colour
+
+
+@dataclass(frozen=True, slots=True)
+class MenuFrame:
     background: Colour
     texts: tuple[Text, ...]
+    boxes: tuple[Box, ...] = ()
+    lines: tuple[Line, ...] = ()
 
 
-type Frame = TitleFrame
-
-_TITLE = "HOT LAPPER"
-_TITLE_SCALE = 3
-
-
-def title_frame() -> TitleFrame:
-    x = (CANVAS_WIDTH - text_width(_TITLE, _TITLE_SCALE)) // 2
-    title = Text(x=x, y=60, string=_TITLE, colour=Colour.AMBER, scale=_TITLE_SCALE)
-    return TitleFrame(background=Colour.BLACK, texts=(title,))
+type Frame = MenuFrame

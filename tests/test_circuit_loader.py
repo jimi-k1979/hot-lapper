@@ -157,3 +157,9 @@ def test_westwood_aerodrome_is_a_flat_4780_m_circuit() -> None:
     assert all(segment.height == 0 for segment in westwood.segments)
     assert 5 <= len(westwood.hazards) <= 8
     assert 12 <= len(westwood.outline) <= 30
+
+
+def test_packaged_circuits_load_shortest_first() -> None:
+    lengths = [circuit.length for circuit in load_circuits()]
+
+    assert lengths == sorted(lengths)

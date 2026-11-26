@@ -17,16 +17,19 @@ Fields that hold collections use `tuple`, not `list`, so the value is immutable 
 
 ## Why here
 
-A `Controls` snapshot is shared by every fixed step in a tick, and a `Frame` is handed from the core to the renderer. If either could be changed in place, one part of the game could change what another part sees. Being frozen rules that out, and `==` comparisons make the tests read naturally (`assert renderer.frames == [TitleFrame(...)]`).
+A `Controls` snapshot is shared by every fixed step in a tick, and a `Frame` is handed from the core to the renderer. If either could be changed in place, one part of the game could change what another part sees. Being frozen rules that out, and `==` comparisons make the tests read naturally (`assert player.game.screen == CircuitSelect(Choices(circuit=1))`).
 
-The loop uses `replace` to clear the edge commands after the first step: `replace(controls, commands=())`.
+The loop uses `replace` to clear the edge commands after the first step: `replace(controls, commands=())`. The screen flow uses it to move a menu's cursor: `replace(title, item=TitleItem.QUIT)` is a new `Title` with every other field copied.
+
+A frozen dataclass instance can be a field's default, as in `choices: Choices = Choices()`. Dataclasses refuse mutable defaults such as a list, because every instance would share the one object, but a frozen instance can never change, so sharing it is safe.
 
 A frozen dataclass can still have values that are worked out rather than stored. `@property` makes a method read like an attribute. `circuit.length` is worked out from the segments each time, so it can never disagree with them.
 
 ## In the code
 
 - [`domain/controls.py`](../../src/hotlapper/domain/controls.py): `Controls`
-- [`domain/frame.py`](../../src/hotlapper/domain/frame.py): `Text` and `TitleFrame`
-- [`application/screens.py`](../../src/hotlapper/application/screens.py): the `Title` screen state
+- [`domain/frame.py`](../../src/hotlapper/domain/frame.py): `Text`, `Box`, `Line`, `Bar` and `MenuFrame`
+- [`domain/car.py`](../../src/hotlapper/domain/car.py): `Car` and the car roster
+- [`application/screens.py`](../../src/hotlapper/application/screens.py): the screen states and the `Choices` they carry
 - [`domain/circuit.py`](../../src/hotlapper/domain/circuit.py): `Straight`, `Corner`, `Segment` and `Circuit`, whose `length` is a `@property` worked out from its segments
 - [`application/loop.py`](../../src/hotlapper/application/loop.py): `replace`

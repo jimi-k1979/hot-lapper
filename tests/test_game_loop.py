@@ -2,9 +2,8 @@ import pytest
 
 from hotlapper.application.loop import STEP, Game
 from hotlapper.domain.controls import Command
-from hotlapper.domain.frame import Text, TitleFrame
-from hotlapper.domain.palette import Colour
-from tests.fakes import FakeClock, RecordingRenderer, ScriptedKeyboard
+from hotlapper.domain.frame import MenuFrame
+from tests.fakes import FakeClock, RecordingRenderer, ScriptedKeyboard, make_circuit
 
 
 @pytest.fixture
@@ -26,7 +25,7 @@ def renderer() -> RecordingRenderer:
 def game(
     clock: FakeClock, keyboard: ScriptedKeyboard, renderer: RecordingRenderer
 ) -> Game:
-    return Game(clock, keyboard, renderer)
+    return Game(clock, keyboard, renderer, [make_circuit("Test Park")])
 
 
 def test_the_game_starts_on_the_title_screen(
@@ -35,14 +34,9 @@ def test_the_game_starts_on_the_title_screen(
     clock.advance(STEP)
     game.tick()
 
-    assert renderer.frames == [
-        TitleFrame(
-            background=Colour.BLACK,
-            texts=(
-                Text(x=39, y=60, string="HOT LAPPER", colour=Colour.AMBER, scale=3),
-            ),
-        )
-    ]
+    [frame] = renderer.frames
+    assert isinstance(frame, MenuFrame)
+    assert frame.texts[0].string == "HOT LAPPER"
 
 
 def test_a_tick_runs_one_fixed_step_per_sixtieth_of_a_second(

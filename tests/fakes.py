@@ -1,8 +1,33 @@
 from collections import deque
 
 from hotlapper.application.ports import Seconds
+from hotlapper.domain.circuit import (
+    Circuit,
+    PitArea,
+    Point,
+    Side,
+    Straight,
+    build_circuit,
+)
 from hotlapper.domain.controls import Command, Controls
 from hotlapper.domain.frame import Frame
+
+TRIANGLE: tuple[Point, ...] = ((0.5, 0.0), (1.0, 1.0), (0.0, 1.0))
+
+
+def make_circuit(name: str, length: float = 1000) -> Circuit:
+    return build_circuit(
+        circuit_id=name.lower().replace(" ", "-"),
+        name=name,
+        order=int(length),
+        width=10,
+        skyline="hills",
+        sections=[Straight(length=length)],
+        hazards=[],
+        scenery=[],
+        pit_area=PitArea(side=Side.RIGHT, at=10, length=50),
+        outline=TRIANGLE,
+    )
 
 
 class FakeClock:
