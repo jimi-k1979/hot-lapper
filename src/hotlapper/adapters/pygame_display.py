@@ -6,7 +6,7 @@ import pygame
 
 from hotlapper.domain.canvas import CANVAS_HEIGHT, CANVAS_WIDTH
 from hotlapper.domain.font import glyph_rects
-from hotlapper.domain.frame import Frame, MenuFrame
+from hotlapper.domain.frame import Frame, MenuFrame, RaceFrame
 from hotlapper.domain.palette import Colour
 
 type RGB = tuple[int, int, int]
@@ -77,6 +77,11 @@ class PygameDisplay:
                 for text in texts:
                     for rect in glyph_rects(text.string, text.x, text.y, text.scale):
                         self._canvas.fill(text.colour, rect)
+            case RaceFrame(boxes=boxes, polygons=polygons):
+                for box in boxes:
+                    self._canvas.fill(box.colour, (box.x, box.y, box.width, box.height))
+                for polygon in polygons:
+                    pygame.draw.polygon(self._canvas, polygon.colour, polygon.points)
             case _:
                 assert_never(frame)
         self._show_canvas()

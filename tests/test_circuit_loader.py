@@ -21,7 +21,7 @@ VALID = """
 name = "Test Park"
 order = 2
 width = 10
-skyline = "hills"
+skyline = "airfield"
 outline = [[0.5, 0.0], [1.0, 1.0], [0.0, 1.0]]
 
 [pit_area]
@@ -74,7 +74,7 @@ def test_a_circuit_file_loads_into_a_circuit_named_by_its_stem(tmp_path: Path) -
     assert circuit.name == "Test Park"
     assert circuit.order == 2
     assert circuit.width == 10
-    assert circuit.skyline == "hills"
+    assert circuit.skyline == "airfield"
     assert circuit.length == 1000
     assert circuit.segment_at(520).curve > 0
     assert circuit.segment_at(495).end_height == pytest.approx(4)
@@ -87,7 +87,7 @@ def test_a_circuit_file_loads_into_a_circuit_named_by_its_stem(tmp_path: Path) -
 @pytest.mark.parametrize(
     ("old", "new", "field"),
     [
-        pytest.param('skyline = "hills"', "", "skyline", id="missing key"),
+        pytest.param('skyline = "airfield"', "", "skyline", id="missing key"),
         pytest.param("radius = 120.5", "", "sections[1].radius", id="missing in table"),
         pytest.param("width = 10", 'width = "wide"', "width", id="string for number"),
         pytest.param("width = 10", "width = true", "width", id="boolean for number"),

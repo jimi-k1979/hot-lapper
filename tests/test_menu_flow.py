@@ -1,6 +1,5 @@
 import pytest
 
-from hotlapper.application.loop import STEP, Game
 from hotlapper.application.screens import (
     CarSelect,
     Choices,
@@ -10,10 +9,10 @@ from hotlapper.application.screens import (
 )
 from hotlapper.domain.controls import Command
 from hotlapper.domain.font import GLYPHS
-from hotlapper.domain.frame import Box, Frame, MenuFrame
+from hotlapper.domain.frame import Box, MenuFrame
 from hotlapper.domain.menus import BAR_HEIGHT, Answer, TitleItem
 from hotlapper.domain.palette import Colour
-from tests.fakes import FakeClock, RecordingRenderer, ScriptedKeyboard, make_circuit
+from tests.fakes import Player, make_circuit
 
 UP, DOWN, LEFT, RIGHT = Command.UP, Command.DOWN, Command.LEFT, Command.RIGHT
 ENTER, ESC = Command.CONFIRM, Command.BACK
@@ -25,29 +24,9 @@ CIRCUITS = (
 )
 
 
-class Player:
-    def __init__(self) -> None:
-        self._clock = FakeClock()
-        self._keyboard = ScriptedKeyboard()
-        self._renderer = RecordingRenderer()
-        self.game = Game(self._clock, self._keyboard, self._renderer, CIRCUITS)
-
-    def press(self, *commands: Command) -> None:
-        for command in commands:
-            self._keyboard.press(command)
-            steps = self.game.steps
-            while self.game.steps == steps:
-                self._clock.advance(STEP)
-                self.game.tick()
-
-    @property
-    def frame(self) -> Frame:
-        return self._renderer.frames[-1]
-
-
 @pytest.fixture
 def player() -> Player:
-    return Player()
+    return Player(CIRCUITS)
 
 
 def test_enter_on_start_opens_circuit_select(player: Player) -> None:

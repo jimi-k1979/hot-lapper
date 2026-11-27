@@ -38,4 +38,16 @@ class MenuFrame:
     lines: tuple[Line, ...] = ()
 
 
-type Frame = MenuFrame
+@dataclass(frozen=True, slots=True)
+class Polygon:
+    points: tuple[Pixel, ...]
+    colour: Colour
+
+
+@dataclass(frozen=True, slots=True)
+class RaceFrame:
+    boxes: tuple[Box, ...]
+    polygons: tuple[Polygon, ...]
+
+
+type Frame = MenuFrame | RaceFrame

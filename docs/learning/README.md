@@ -15,4 +15,5 @@ Short explainers for the Python features Hot Lapper uses. Each one is written in
 - [Generic functions](generics.md): one typed `choice` for every enum a circuit file uses
 - [Exception chaining](exception-chaining.md): `raise ... from`, and naming the circuit file in a `CircuitDataError`
 - [Hypothesis](hypothesis.md): property tests for segment lookup round the loop
-- [Generators](generators.md): the font yielding pixel rectangles
+- [Generators](generators.md): the font yielding pixel rectangles, and the road's segments and paintwork
+- [`itertools`](itertools.md): visible segments wrapping round the loop, and skyline runs
