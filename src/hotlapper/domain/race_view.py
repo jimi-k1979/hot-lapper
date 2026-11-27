@@ -22,12 +22,13 @@ SKYLINE_DISTANCE: Final = 800
 
 def race_frame(circuit: Circuit, race: Race) -> RaceFrame:
     eye = road_height(circuit, race.distance) + EYE_HEIGHT
-    horizon = HORIZON + round(eye * FOCAL_LENGTH / SKYLINE_DISTANCE)
+    base = HORIZON + round(eye * FOCAL_LENGTH / SKYLINE_DISTANCE)
+    haze = base - PALE_BAND
     boxes = [
-        Box(0, 0, CANVAS_WIDTH, horizon, Colour.SKY),
-        Box(0, horizon - PALE_BAND, CANVAS_WIDTH, PALE_BAND, Colour.PALE_SKY),
-        *_skyline_boxes(circuit, race, horizon),
-        Box(0, horizon, CANVAS_WIDTH, CANVAS_HEIGHT - horizon, Colour.DARK_GREEN),
+        Box(0, 0, CANVAS_WIDTH, HORIZON, Colour.SKY),
+        Box(0, haze, CANVAS_WIDTH, max(base, HORIZON) - haze, Colour.PALE_SKY),
+        *_skyline_boxes(circuit, race, base),
+        Box(0, HORIZON, CANVAS_WIDTH, CANVAS_HEIGHT - HORIZON, Colour.DARK_GREEN),
     ]
     polygons = road_polygons(circuit, race.distance, race.lateral)
     return RaceFrame(boxes=tuple(boxes), polygons=tuple(polygons))

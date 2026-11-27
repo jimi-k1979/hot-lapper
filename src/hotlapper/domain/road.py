@@ -18,7 +18,7 @@ from hotlapper.domain.palette import Colour
 
 FIELD_OF_VIEW: Final = math.radians(90)
 HORIZON: Final = 82
-DRAW_DISTANCE: Final = 160
+DRAW_DISTANCE: Final = 80
 FOCAL_LENGTH: Final = CANVAS_WIDTH / 2 / math.tan(FIELD_OF_VIEW / 2)
 EYE_HEIGHT: Final = 1.0
 NEAR_PLANE: Final = 0.5
@@ -112,13 +112,23 @@ def road_polygons(circuit: Circuit, distance: Metres, lateral: Metres) -> list[P
     paintwork = _paintwork_by_segment(circuit)
     polygons: list[Polygon] = []
     bottom = float(CANVAS_HEIGHT)
+    unfinished: CrossSection | None = None
     for span, segment in _spans(circuit, distance):
         nearest = max(0.0, (NEAR_PLANE - span.ahead) / SEGMENT_LENGTH)
         if nearest >= 1:
             continue
         near, far = span.at(nearest, camera), span.at(1, camera)
-        if _hidden(near, far, bottom):
+        if far.y >= bottom:
+            unfinished = None
             continue
+        if unfinished is not None:
+            near = unfinished
+        if _within_a_row(near, far, bottom):
+            unfinished = near
+            continue
+        if _side_on(near, far, circuit.width / 2):
+            break
+        unfinished = None
         polygons += _surface(near, far, bottom, circuit.width, segment.light_band)
         for paint in paintwork.get(segment.start, ()):
             mark = _mark(paint, span, camera, nearest, bottom)
@@ -136,7 +146,7 @@ def _mark(
     if end <= start:
         return None
     near, far = span.at(start, camera), span.at(end, camera)
-    if _hidden(near, far, bottom):
+    if far.y >= bottom or _within_a_row(near, far, bottom):
         return None
     across = paint.across + paint.lean * (start * SEGMENT_LENGTH - paint.at)
     shift = paint.lean * (end - start) * SEGMENT_LENGTH
@@ -160,8 +170,15 @@ def _spans(circuit: Circuit, distance: Metres) -> Iterator[tuple[_Span, Segment]
         sideways, drift = end_sideways, drift + turn
 
 
-def _hidden(near: CrossSection, far: CrossSection, bottom: float) -> bool:
-    return far.y >= bottom or round(min(near.y, bottom)) == round(far.y)
+def _side_on(near: CrossSection, far: CrossSection, half: Metres) -> bool:
+    gap = (far.x(half) - far.x(-half)) * (near.y - far.y)
+    rightwards = far.x(half) - near.x(half)
+    leftwards = near.x(-half) - far.x(-half)
+    return rightwards > gap or leftwards > gap
+
+
+def _within_a_row(near: CrossSection, far: CrossSection, bottom: float) -> bool:
+    return round(min(near.y, bottom)) == round(far.y)
 
 
 def _surface(

@@ -2,6 +2,7 @@ import math
 from collections.abc import Collection
 from itertools import pairwise
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -33,6 +34,16 @@ RING = make_circuit(
         Straight(length=100),
         Corner(turn=Side.RIGHT, radius=100, enter=5, hold=600, leave=5),
         Straight(length=290),
+    ],
+)
+HAIRPIN = make_circuit(
+    "Hairpin",
+    sections=[
+        Straight(length=300),
+        Corner(turn=Side.LEFT, radius=30, enter=10, hold=80, leave=10),
+        Straight(length=400),
+        Corner(turn=Side.RIGHT, radius=60, enter=10, hold=170, leave=10),
+        Straight(length=200),
     ],
 )
 
@@ -87,6 +98,37 @@ def test_nothing_thinner_than_a_pixel_row_is_drawn(
         assert top(polygon) < bottom(polygon)
 
 
+@given(
+    circuit=st.sampled_from([FLAT, RING]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_each_road_strip_starts_where_the_last_one_finished(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    strips = road(frame_at(circuit, distance, lateral=lateral))
+
+    for near, far in pairwise(strips):
+        near_left, near_right = far.points[:2]
+        assert (near_left, near_right) == (near.points[3], near.points[2])
+
+
+@given(
+    circuit=st.sampled_from([RING, HAIRPIN]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_the_road_stops_where_it_turns_side_on(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    for strip in road(frame_at(circuit, distance, lateral=lateral)):
+        (near_left, _), (near_right, _), (far_right, _), (far_left, _) = strip.points
+        rows = bottom(strip) - top(strip)
+        width = far_right - far_left + 1
+        assert far_right - near_right <= width * rows + 1
+        assert near_left - far_left <= width * rows + 1
+
+
 @given(distance=st.floats(-5000, 5000), lateral=st.floats(-10, 10))
 def test_the_road_reaches_the_bottom_of_the_canvas(
     distance: float, lateral: float
@@ -119,9 +161,9 @@ def test_a_crest_hides_the_road_beyond_it() -> None:
 
 
 def test_a_right_hand_corner_bends_the_road_right() -> None:
-    strips = road(frame_at(RING, 50))
+    (far_right, _), (far_left, _) = road(frame_at(RING, 50))[-1].points[2:]
 
-    assert xs(strips[-1])[0] > CANVAS_WIDTH * 3 / 4
+    assert (far_left + far_right) / 2 > CANVAS_WIDTH / 2 + 5
 
 
 def test_the_road_does_not_jump_as_the_car_crosses_a_segment_boundary() -> None:
@@ -218,6 +260,13 @@ def test_the_skyline_stands_on_the_horizon_in_front_of_a_pale_band() -> None:
     assert any(top is not None for top in silhouette(frame))
 
 
+@pytest.mark.parametrize("distance", [50, 300])
+def test_the_grass_always_starts_at_the_horizon(distance: float) -> None:
+    [(_, ground, _, _)] = boxes(frame_at(HILL, distance), Colour.DARK_GREEN)
+
+    assert ground == HORIZON
+
+
 def test_the_skyline_slides_as_the_heading_turns() -> None:
     shift = 64
     straight_on = silhouette(frame_at(FLAT, 500))
@@ -227,9 +276,14 @@ def test_the_skyline_slides_as_the_heading_turns() -> None:
     assert turned_right != straight_on
 
 
-def test_the_skyline_drops_as_the_car_climbs() -> None:
-    [(_, at_start, _, _)] = boxes(frame_at(HILL, 50), Colour.PALE_SKY)
-    [(_, on_the_crest, _, _)] = boxes(frame_at(HILL, 300), Colour.PALE_SKY)
+def skyline_base(frame: RaceFrame) -> int:
+    [base] = {y + height for _, y, _, height in boxes(frame, Colour.NAVY)}
+    return base
+
+
+def test_the_skyline_sinks_as_the_car_climbs() -> None:
+    at_start = skyline_base(frame_at(HILL, 50))
+    on_the_crest = skyline_base(frame_at(HILL, 300))
 
     assert on_the_crest > at_start
 
