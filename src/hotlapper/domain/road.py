@@ -27,6 +27,10 @@ CHEQUERS: Final = 8
 PAINT_WIDTH: Final = 0.25
 GRID_MARGIN: Final = 0.6
 PIT_DASH: Final = 2.5
+HATCH_SPACING: Final = 5.0
+HATCH_RUN: Final = 4.0
+HATCH_WIDTH: Final = 0.8
+HATCH_MARGIN: Final = 0.4
 
 LIGHT_SHADES: Final = (Colour.LIGHT_GREEN, Colour.RED, Colour.MID_GREY)
 DARK_SHADES: Final = (Colour.DARK_GREEN, Colour.WHITE, Colour.DARK_GREY)
@@ -72,6 +76,7 @@ class _Paint:
     across: Metres
     width: Metres
     colour: Colour
+    lean: float = 0
 
 
 def project(
@@ -111,15 +116,15 @@ def road_polygons(circuit: Circuit, distance: Metres, lateral: Metres) -> list[P
         nearest = max(0.0, (NEAR_PLANE - span.ahead) / SEGMENT_LENGTH)
         if nearest >= 1:
             continue
-        strip = _clip(span.at(nearest, camera), span.at(1, camera), bottom)
-        if strip is None:
+        near, far = span.at(nearest, camera), span.at(1, camera)
+        if _hidden(near, far, bottom):
             continue
-        polygons += _surface(*strip, circuit.width, segment.light_band)
+        polygons += _surface(near, far, bottom, circuit.width, segment.light_band)
         for paint in paintwork.get(segment.start, ()):
             mark = _mark(paint, span, camera, nearest, bottom)
             if mark is not None:
                 polygons.append(mark)
-        bottom = strip[1].y
+        bottom = far.y
     return polygons
 
 
@@ -130,11 +135,13 @@ def _mark(
     end = (paint.at + paint.length) / SEGMENT_LENGTH
     if end <= start:
         return None
-    mark = _clip(span.at(start, camera), span.at(end, camera), bottom)
-    if mark is None:
+    near, far = span.at(start, camera), span.at(end, camera)
+    if _hidden(near, far, bottom):
         return None
+    across = paint.across + paint.lean * (start * SEGMENT_LENGTH - paint.at)
+    shift = paint.lean * (end - start) * SEGMENT_LENGTH
     half = paint.width / 2
-    return _quad(*mark, paint.across - half, paint.across + half, paint.colour)
+    return _quad(near, far, across - half, across + half, paint.colour, bottom, shift)
 
 
 def _spans(circuit: Circuit, distance: Metres) -> Iterator[tuple[_Span, Segment]]:
@@ -153,44 +160,46 @@ def _spans(circuit: Circuit, distance: Metres) -> Iterator[tuple[_Span, Segment]
         sideways, drift = end_sideways, drift + turn
 
 
-def _clip(
-    near: CrossSection, far: CrossSection, bottom: float
-) -> tuple[CrossSection, CrossSection] | None:
-    if far.y >= bottom:
-        return None
-    if near.y > bottom:
-        along = (near.y - bottom) / (near.y - far.y)
-        near = CrossSection(
-            y=bottom,
-            centre=_between(near.centre, far.centre, along),
-            scale=_between(near.scale, far.scale, along),
-        )
-    return near, far
+def _hidden(near: CrossSection, far: CrossSection, bottom: float) -> bool:
+    return far.y >= bottom or round(min(near.y, bottom)) == round(far.y)
 
 
 def _surface(
-    near: CrossSection, far: CrossSection, width: Metres, light: bool
+    near: CrossSection, far: CrossSection, bottom: float, width: Metres, light: bool
 ) -> list[Polygon]:
     grass, kerb, road = LIGHT_SHADES if light else DARK_SHADES
     half = width / 2
-    top, bottom = round(far.y), round(near.y)
+    top, base = round(far.y), round(min(near.y, bottom))
     return [
         Polygon(
-            ((0, bottom), (CANVAS_WIDTH, bottom), (CANVAS_WIDTH, top), (0, top)), grass
+            ((0, base), (CANVAS_WIDTH, base), (CANVAS_WIDTH, top), (0, top)), grass
         ),
-        _quad(near, far, -half - KERB_WIDTH, half + KERB_WIDTH, kerb),
-        _quad(near, far, -half, half, road),
+        _quad(near, far, -half - KERB_WIDTH, half + KERB_WIDTH, kerb, bottom),
+        _quad(near, far, -half, half, road, bottom),
     ]
 
 
 def _quad(
-    near: CrossSection, far: CrossSection, left: Metres, right: Metres, colour: Colour
+    near: CrossSection,
+    far: CrossSection,
+    left: Metres,
+    right: Metres,
+    colour: Colour,
+    bottom: float,
+    shift: Metres = 0,
 ) -> Polygon:
+    far_left, far_right = far.x(left + shift), far.x(right + shift)
+    near_left, near_right, near_y = near.x(left), near.x(right), near.y
+    if near_y > bottom:
+        along = (near_y - bottom) / (near_y - far.y)
+        near_left = _between(near_left, far_left, along)
+        near_right = _between(near_right, far_right, along)
+        near_y = bottom
     points = (
-        (near.x(left), near.y),
-        (near.x(right), near.y),
-        (far.x(right), far.y),
-        (far.x(left), far.y),
+        (near_left, near_y),
+        (near_right, near_y),
+        (far_right, far.y),
+        (far_left, far.y),
     )
     return Polygon(tuple((round(x), round(y)) for x, y in points), colour)
 
@@ -206,8 +215,9 @@ def _paintwork_by_segment(circuit: Circuit) -> Mapping[Metres, Sequence[_Paint]]
             near, far = max(paint.at, start), min(end, start + SEGMENT_LENGTH)
             if far > near:
                 segment = circuit.segment_at(start)
+                across = paint.across + paint.lean * (near - paint.at)
                 pieces[segment.start].append(
-                    replace(paint, at=near - start, length=far - near)
+                    replace(paint, at=near - start, length=far - near, across=across)
                 )
     return pieces
 
@@ -244,6 +254,18 @@ def _paintwork(circuit: Circuit) -> Iterator[_Paint]:
             across=0,
             width=PAINT_WIDTH,
             colour=Colour.AMBER,
+        )
+    side = pit_area.side.sign
+    start = HATCH_MARGIN + HATCH_WIDTH / 2
+    span = circuit.width / 2 - 2 * start
+    for hatch in range(int((pit_area.length - HATCH_RUN) // HATCH_SPACING) + 1):
+        yield _Paint(
+            at=pit_area.at + hatch * HATCH_SPACING,
+            length=HATCH_RUN,
+            across=side * start,
+            width=HATCH_WIDTH,
+            colour=Colour.AMBER,
+            lean=side * span / HATCH_RUN,
         )
 
 

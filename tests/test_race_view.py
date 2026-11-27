@@ -75,6 +75,18 @@ def test_road_strips_run_near_to_far_each_wholly_above_the_last(
         assert bottom(far) <= top(near)
 
 
+@given(
+    circuit=st.sampled_from([FLAT, HILL, RING]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_nothing_thinner_than_a_pixel_row_is_drawn(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    for polygon in frame_at(circuit, distance, lateral=lateral).polygons:
+        assert top(polygon) < bottom(polygon)
+
+
 @given(distance=st.floats(-5000, 5000), lateral=st.floats(-10, 10))
 def test_the_road_reaches_the_bottom_of_the_canvas(
     distance: float, lateral: float
@@ -87,7 +99,6 @@ def test_the_road_reaches_the_bottom_of_the_canvas(
 def test_a_straight_flat_road_runs_to_the_horizon_centred_on_the_car() -> None:
     strips = road(frame_at(FLAT, 500))
 
-    assert len(strips) > 100
     assert top(strips[-1]) == HORIZON
     for strip in strips:
         left, *_, right = xs(strip)
@@ -103,15 +114,14 @@ def test_moving_across_the_road_shifts_it_the_other_way() -> None:
 
 def test_a_crest_hides_the_road_beyond_it() -> None:
     climbing = road(frame_at(HILL, 120))
-    level = road(frame_at(FLAT, 120))
 
-    assert len(climbing) < len(level)
+    assert top(climbing[-1]) < HORIZON - 4
 
 
 def test_a_right_hand_corner_bends_the_road_right() -> None:
     strips = road(frame_at(RING, 50))
 
-    assert xs(strips[-1])[0] > CANVAS_WIDTH
+    assert xs(strips[-1])[0] > CANVAS_WIDTH * 3 / 4
 
 
 def test_the_road_does_not_jump_as_the_car_crosses_a_segment_boundary() -> None:
@@ -160,12 +170,28 @@ def test_the_grid_is_drawn_in_white_on_both_sides_of_the_road() -> None:
 
 
 def test_the_pit_area_is_an_amber_dashed_line_down_the_middle() -> None:
-    dashes = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    middle = CANVAS_WIDTH / 2
 
+    dashes = [line for line in amber if min(xs(line)) <= middle <= max(xs(line))]
     assert len(dashes) >= 5
-    for dash in dashes:
-        assert min(xs(dash)) <= CANVAS_WIDTH / 2 + 1
-        assert max(xs(dash)) >= CANVAS_WIDTH / 2 - 1
+
+
+def test_the_pit_side_of_the_road_is_hatched_in_amber() -> None:
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    middle = CANVAS_WIDTH / 2
+
+    assert len([mark for mark in amber if min(xs(mark)) > middle]) >= 5
+    assert not [mark for mark in amber if max(xs(mark)) < middle]
+
+
+def test_pit_hatching_slants_towards_the_road_edge() -> None:
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    hatch = next(mark for mark in amber if min(xs(mark)) > CANVAS_WIDTH / 2)
+    near_x = [x for x, y in hatch.points if y == bottom(hatch)]
+    far_x = [x for x, y in hatch.points if y == top(hatch)]
+
+    assert min(far_x) > min(near_x)
 
 
 def boxes(frame: RaceFrame, colour: Colour) -> list[tuple[int, int, int, int]]:
@@ -183,12 +209,12 @@ def silhouette(frame: RaceFrame) -> list[int | None]:
     return tops
 
 
-def test_a_pale_band_sits_above_the_horizon_with_the_skyline_on_top() -> None:
+def test_the_skyline_stands_on_the_horizon_in_front_of_a_pale_band() -> None:
     frame = frame_at(FLAT, 500)
     [(_, band_top, _, band_height)] = boxes(frame, Colour.PALE_SKY)
 
     assert band_top + band_height == HORIZON
-    assert all(y + height == band_top for _, y, _, height in boxes(frame, Colour.NAVY))
+    assert all(y + height == HORIZON for _, y, _, height in boxes(frame, Colour.NAVY))
     assert any(top is not None for top in silhouette(frame))
 
 

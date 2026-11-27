@@ -26,7 +26,7 @@ def race_frame(circuit: Circuit, race: Race) -> RaceFrame:
     boxes = [
         Box(0, 0, CANVAS_WIDTH, horizon, Colour.SKY),
         Box(0, horizon - PALE_BAND, CANVAS_WIDTH, PALE_BAND, Colour.PALE_SKY),
-        *_skyline_boxes(circuit, race, horizon - PALE_BAND),
+        *_skyline_boxes(circuit, race, horizon),
         Box(0, horizon, CANVAS_WIDTH, CANVAS_HEIGHT - horizon, Colour.DARK_GREEN),
     ]
     polygons = road_polygons(circuit, race.distance, race.lateral)
