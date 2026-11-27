@@ -28,6 +28,12 @@ for height, run in groupby(enumerate(heights), key=itemgetter(1)):
 
 `groupby` splits an iterator into runs of neighbours with the same key. The skyline is one height per screen column, so each run of equal heights becomes one box instead of a box per column. Unlike SQL's `GROUP BY`, it only groups *neighbouring* items.
 
+`itemgetter(1)` from the `operator` module is a ready-made `lambda pair: pair[1]`: here it picks the height out of each `(column, height)` pair as the key.
+
+## A neighbour from `collections`: `defaultdict`
+
+`defaultdict(list)` is a dictionary that makes an empty list the first time a missing key is read, so `pieces[start].append(paint)` needs no "is the key there yet?" check. The road uses it to group painted markings by the segment they fall in.
+
 ## Successive pairs: `pairwise`
 
 `pairwise([a, b, c])` gives `(a, b), (b, c)`. A test uses it to check each road strip against the one in front of it.
@@ -38,6 +44,6 @@ The road is drawn from the segments just ahead of the car, round and round the c
 
 ## In the code
 
-- [`domain/road.py`](../../src/hotlapper/domain/road.py): `visible_segments`
-- [`domain/race_view.py`](../../src/hotlapper/domain/race_view.py): `_skyline`
+- [`domain/road.py`](../../src/hotlapper/domain/road.py): `visible_segments`, and `_paintwork_by_segment` for `defaultdict`
+- [`domain/race_view.py`](../../src/hotlapper/domain/race_view.py): `_skyline_boxes`
 - [`tests/test_race_view.py`](../../tests/test_race_view.py): `test_road_strips_run_near_to_far_each_wholly_above_the_last`

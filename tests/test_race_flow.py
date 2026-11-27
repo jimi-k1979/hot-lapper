@@ -25,7 +25,7 @@ def race(player: Player) -> Race:
     return screen.race
 
 
-def race_frame(player: Player) -> RaceFrame:
+def race_view(player: Player) -> RaceFrame:
     frame = player.frame
     assert isinstance(frame, RaceFrame)
     return frame
@@ -37,7 +37,7 @@ def test_confirming_a_car_starts_the_race_on_pole_position(player: Player) -> No
     assert pole.at - GRID_BOX_LENGTH < race(player).distance < pole.at
     assert race(player).lateral == pole.across
     assert race(player).speed == 0
-    race_frame(player)
+    race_view(player)
 
 
 def test_holding_accelerate_gathers_speed(player: Player) -> None:
@@ -105,13 +105,13 @@ def test_steering_stops_at_the_outer_limit(player: Player) -> None:
 
 
 def test_the_road_moves_towards_the_car_as_it_drives(player: Player) -> None:
-    standing = race_frame(player).polygons
+    standing = race_view(player).polygons
     player.wait(ONE_SECOND)
-    assert race_frame(player).polygons == standing
+    assert race_view(player).polygons == standing
 
     player.hold(Controls(accelerate=True))
     player.wait(ONE_SECOND)
-    assert race_frame(player).polygons != standing
+    assert race_view(player).polygons != standing
 
 
 def test_closing_the_window_quits_from_a_race(player: Player) -> None:

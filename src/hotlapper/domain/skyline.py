@@ -1,5 +1,5 @@
 import math
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterator, Mapping
 from typing import Final
 
 type Shape = Iterator[tuple[int, int]]
@@ -20,7 +20,7 @@ def _mound(x: int, width: int, height: int) -> Shape:
         yield x + column, round(height * math.sqrt(1 - across * across))
 
 
-def _skyline(*shapes: Iterable[tuple[int, int]]) -> tuple[int, ...]:
+def _skyline(*shapes: Shape) -> tuple[int, ...]:
     heights = [GROUND] * SKYLINE_WIDTH
     for shape in shapes:
         for column, height in shape:

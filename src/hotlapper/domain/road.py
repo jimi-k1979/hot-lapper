@@ -51,8 +51,8 @@ class CrossSection:
 @dataclass(frozen=True, slots=True)
 class _Span:
     ahead: Metres
-    offset: Metres
-    end_offset: Metres
+    sideways: Metres
+    end_sideways: Metres
     height: Metres
     end_height: Metres
 
@@ -60,7 +60,7 @@ class _Span:
         return project(
             camera,
             self.ahead + along * SEGMENT_LENGTH,
-            _between(self.offset, self.end_offset, along),
+            _between(self.sideways, self.end_sideways, along),
             _between(self.height, self.end_height, along),
         )
 
@@ -75,12 +75,12 @@ class _Paint:
 
 
 def project(
-    camera: Camera, ahead: Metres, offset: Metres, height: Metres
+    camera: Camera, ahead: Metres, sideways: Metres, height: Metres
 ) -> CrossSection:
     scale = FOCAL_LENGTH / ahead
     return CrossSection(
         y=HORIZON + (camera.height - height) * scale,
-        centre=CANVAS_WIDTH / 2 + (offset - camera.across) * scale,
+        centre=CANVAS_WIDTH / 2 + (sideways - camera.across) * scale,
         scale=scale,
     )
 
@@ -138,19 +138,19 @@ def _mark(
 
 
 def _spans(circuit: Circuit, distance: Metres) -> Iterator[tuple[_Span, Segment]]:
-    offset = slope = 0.0
+    sideways = drift = 0.0
     for ahead, segment in visible_segments(circuit, distance):
         if ahead <= 0:
-            # Bend relative to the car's own heading, so the road never jumps
+            # Turn relative to the car's own heading, so the road never jumps
             # as the car crosses a segment boundary.
-            offset, slope = segment.curve * ahead**2 / 2, segment.curve * ahead
-        bend = segment.curve * SEGMENT_LENGTH
-        end_offset = offset + (slope + bend / 2) * SEGMENT_LENGTH
+            sideways, drift = segment.curve * ahead**2 / 2, segment.curve * ahead
+        turn = segment.curve * SEGMENT_LENGTH
+        end_sideways = sideways + (drift + turn / 2) * SEGMENT_LENGTH
         yield (
-            _Span(ahead, offset, end_offset, segment.height, segment.end_height),
+            _Span(ahead, sideways, end_sideways, segment.height, segment.end_height),
             segment,
         )
-        offset, slope = end_offset, slope + bend
+        sideways, drift = end_sideways, drift + turn
 
 
 def _clip(

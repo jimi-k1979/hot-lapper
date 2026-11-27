@@ -1,5 +1,5 @@
 import math
-from collections.abc import Sequence
+from collections.abc import Collection
 from itertools import pairwise
 
 from hypothesis import given
@@ -42,7 +42,7 @@ def frame_at(circuit: Circuit, distance: float, **race: float) -> RaceFrame:
 
 
 def road(frame: RaceFrame) -> list[Polygon]:
-    return [polygon for polygon in frame.polygons if polygon.colour in ROAD]
+    return coloured(frame, ROAD)
 
 
 def top(polygon: Polygon) -> int:
@@ -57,7 +57,7 @@ def xs(polygon: Polygon) -> list[int]:
     return sorted(x for x, _ in polygon.points)
 
 
-def coloured(frame: RaceFrame, colours: Sequence[Colour]) -> list[Polygon]:
+def coloured(frame: RaceFrame, colours: Collection[Colour]) -> list[Polygon]:
     return [polygon for polygon in frame.polygons if polygon.colour in colours]
 
 
@@ -168,7 +168,7 @@ def test_the_pit_area_is_an_amber_dashed_line_down_the_middle() -> None:
         assert max(xs(dash)) >= CANVAS_WIDTH / 2 - 1
 
 
-def sky(frame: RaceFrame, colour: Colour) -> list[tuple[int, int, int, int]]:
+def boxes(frame: RaceFrame, colour: Colour) -> list[tuple[int, int, int, int]]:
     return [
         (box.x, box.y, box.width, box.height)
         for box in frame.boxes
@@ -178,17 +178,17 @@ def sky(frame: RaceFrame, colour: Colour) -> list[tuple[int, int, int, int]]:
 
 def silhouette(frame: RaceFrame) -> list[int | None]:
     tops: list[int | None] = [None] * CANVAS_WIDTH
-    for x, y, width, _ in sky(frame, Colour.NAVY):
+    for x, y, width, _ in boxes(frame, Colour.NAVY):
         tops[x : x + width] = [y] * width
     return tops
 
 
 def test_a_pale_band_sits_above_the_horizon_with_the_skyline_on_top() -> None:
     frame = frame_at(FLAT, 500)
-    [(_, band_top, _, band_height)] = sky(frame, Colour.PALE_SKY)
+    [(_, band_top, _, band_height)] = boxes(frame, Colour.PALE_SKY)
 
     assert band_top + band_height == HORIZON
-    assert all(y + height == band_top for _, y, _, height in sky(frame, Colour.NAVY))
+    assert all(y + height == band_top for _, y, _, height in boxes(frame, Colour.NAVY))
     assert any(top is not None for top in silhouette(frame))
 
 
@@ -202,8 +202,8 @@ def test_the_skyline_slides_as_the_heading_turns() -> None:
 
 
 def test_the_skyline_drops_as_the_car_climbs() -> None:
-    [(_, at_start, _, _)] = sky(frame_at(HILL, 50), Colour.PALE_SKY)
-    [(_, on_the_crest, _, _)] = sky(frame_at(HILL, 300), Colour.PALE_SKY)
+    [(_, at_start, _, _)] = boxes(frame_at(HILL, 50), Colour.PALE_SKY)
+    [(_, on_the_crest, _, _)] = boxes(frame_at(HILL, 300), Colour.PALE_SKY)
 
     assert on_the_crest > at_start
 
