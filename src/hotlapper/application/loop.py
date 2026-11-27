@@ -57,7 +57,7 @@ class Game:
             and self._accumulator >= STEP
             and steps_this_tick < MAX_STEPS_PER_TICK
         ):
-            self._screen = transition(self._screen, controls, self._circuits)
+            self._screen = transition(self._screen, controls, self._circuits, STEP)
             controls = replace(controls, commands=())
             self._accumulator -= STEP
             steps_this_tick += 1

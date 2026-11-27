@@ -21,6 +21,14 @@ Hypothesis heads straight for edge cases, such as boundaries and tiny or huge va
 
 Segment lookup has to wrap round the loop for any distance: negative, many laps on, or right on a segment boundary. A few examples can't cover that, but two properties can: lookup repeats every lap, and the segment found always contains the distance.
 
+## Invariants for the projection
+
+Projection arithmetic is easy to get subtly wrong, so it's stated as properties rather than examples. A point at eye height always lands on the horizon. Road below the eye always lands below it. Road further ahead is always nearer the horizon and narrower. Road either side of the camera is mirrored. Hypothesis tries hundreds of cameras, distances and offsets for each.
+
+A whole frame gets the same treatment: for any distance and lateral position on a flat, hilly or curving circuit, each road strip lies wholly above the strip nearer the car. That one property covers drawing near to far and hill clipping together.
+
 ## In the code
 
 - [`tests/test_circuit.py`](../../tests/test_circuit.py): `test_segment_lookup_repeats_every_lap` and `test_segment_lookup_finds_the_segment_under_the_distance`
+- [`tests/test_road.py`](../../tests/test_road.py): the projection properties, and visible segments wrapping round the loop
+- [`tests/test_race_view.py`](../../tests/test_race_view.py): `test_road_strips_run_near_to_far_each_wholly_above_the_last`

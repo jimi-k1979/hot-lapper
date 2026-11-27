@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Final
 
+from hotlapper.domain.skyline import SKYLINES
+
 type CircuitId = str
 type Metres = float
 type Point = tuple[float, float]
@@ -165,6 +167,8 @@ def build_circuit(
     pit_area: PitArea,
     outline: Sequence[Point],
 ) -> Circuit:
+    if skyline not in SKYLINES:
+        raise CircuitDataError("skyline", f"should be one of {', '.join(SKYLINES)}")
     segments = _segments(sections)
     length = len(segments) * SEGMENT_LENGTH
     grid = _grid(length, width, pit_area.side)

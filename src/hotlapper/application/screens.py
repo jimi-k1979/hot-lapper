@@ -13,6 +13,8 @@ from hotlapper.domain.menus import (
     circuit_select_frame,
     title_frame,
 )
+from hotlapper.domain.race import Race, drive, start_race
+from hotlapper.domain.race_view import race_frame
 
 FIRST_LAP_COUNT: Final = 3
 MIN_LAPS: Final = 1
@@ -49,21 +51,31 @@ class CarSelect:
     choices: Choices
 
 
-type Screen = Title | CircuitSelect | LapCount | CarSelect
+@dataclass(frozen=True, slots=True)
+class Racing:
+    choices: Choices
+    race: Race
+
+
+type Screen = Title | CircuitSelect | LapCount | CarSelect | Racing
 
 
 def transition(
-    screen: Screen, controls: Controls, circuits: Sequence[Circuit]
+    screen: Screen, controls: Controls, circuits: Sequence[Circuit], dt: float
 ) -> Screen | None:
     next_screen: Screen | None = screen
     for command in controls.commands:
         if next_screen is None:
             break
-        next_screen = _on(next_screen, command, len(circuits))
+        next_screen = _on(next_screen, command, circuits)
+    match next_screen:
+        case Racing(choices=choices, race=race):
+            circuit = circuits[choices.circuit]
+            return Racing(choices, drive(race, controls, circuit, dt))
     return next_screen
 
 
-def _on(screen: Screen, command: Command, circuit_count: int) -> Screen | None:
+def _on(screen: Screen, command: Command, circuits: Sequence[Circuit]) -> Screen | None:
     if command is Command.QUIT:
         return None
     match screen:
@@ -72,11 +84,13 @@ def _on(screen: Screen, command: Command, circuit_count: int) -> Screen | None:
         case Title():
             return _reset_confirmation(screen, command)
         case CircuitSelect():
-            return _circuit_select(screen, command, circuit_count)
+            return _circuit_select(screen, command, len(circuits))
         case LapCount():
             return _lap_count(screen, command)
         case CarSelect():
-            return _car_select(screen, command)
+            return _car_select(screen, command, circuits)
+        case Racing():
+            return screen
 
 
 def _title(title: Title, command: Command) -> Screen | None:
@@ -132,12 +146,16 @@ def _lap_count(prompt: LapCount, command: Command) -> Screen:
     return prompt
 
 
-def _car_select(select: CarSelect, command: Command) -> Screen:
+def _car_select(
+    select: CarSelect, command: Command, circuits: Sequence[Circuit]
+) -> Screen:
     choices = select.choices
     match command:
         case Command.UP | Command.DOWN:
             car = _moved(choices.car, command, 0, len(CAR_ROSTER) - 1)
             return CarSelect(replace(choices, car=car))
+        case Command.CONFIRM:
+            return Racing(choices, start_race(circuits[choices.circuit]))
         case Command.BACK:
             return CircuitSelect(choices)
     return select
@@ -158,3 +176,5 @@ def frame_for(screen: Screen, circuits: Sequence[Circuit]) -> Frame:
             return circuit_select_frame(circuits, choices.circuit, laps)
         case CarSelect(choices=choices):
             return car_select_frame(choices.car)
+        case Racing(choices=choices, race=race):
+            return race_frame(circuits[choices.circuit], race)

@@ -34,13 +34,14 @@ def build(
     scenery: Sequence[Scenery] = (),
     pit_area: PitArea = RIGHT_PITS,
     outline: Sequence[Point] = SQUARE,
+    skyline: str = "airfield",
 ) -> Circuit:
     return build_circuit(
         circuit_id="test-park",
         name="Test Park",
         order=1,
         width=10,
-        skyline="hills",
+        skyline=skyline,
         sections=sections,
         hazards=hazards,
         scenery=scenery,
@@ -284,6 +285,10 @@ def test_an_outline_that_is_not_a_polygon_in_the_unit_square_is_rejected(
     outline: list[Point], field: str
 ) -> None:
     assert rejected_field(outline=outline) == field
+
+
+def test_an_unknown_skyline_is_rejected() -> None:
+    assert rejected_field(skyline="volcano") == "skyline"
 
 
 def test_a_circuit_without_sections_is_rejected() -> None:

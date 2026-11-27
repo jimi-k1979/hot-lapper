@@ -10,6 +10,8 @@ from hotlapper.domain.menus import (
     circuit_select_frame,
     title_frame,
 )
+from hotlapper.domain.race import start_race
+from hotlapper.domain.race_view import race_frame
 
 
 def test_the_display_opens_draws_the_menus_and_closes() -> None:
@@ -19,6 +21,8 @@ def test_the_display_opens_draws_the_menus_and_closes() -> None:
         display.present(circuit_select_frame(load_circuits(), 0, laps=3))
         display.toggle_fullscreen()
         display.present(car_select_frame(0))
+        [circuit, *_] = load_circuits()
+        display.present(race_frame(circuit, start_race(circuit)))
         assert pygame.display.get_init()
 
     assert not pygame.display.get_init()

@@ -1,0 +1,293 @@
+import math
+from collections.abc import Collection
+from itertools import pairwise
+
+import pytest
+from hypothesis import given
+from hypothesis import strategies as st
+
+from hotlapper.domain.canvas import CANVAS_HEIGHT, CANVAS_WIDTH
+from hotlapper.domain.circuit import Circuit, Corner, Side, Straight
+from hotlapper.domain.frame import Polygon, RaceFrame
+from hotlapper.domain.palette import Colour
+from hotlapper.domain.race import Race
+from hotlapper.domain.race_view import race_frame
+from hotlapper.domain.road import FOCAL_LENGTH, HORIZON
+from hotlapper.domain.skyline import SKYLINE_WIDTH, SKYLINES
+from tests.fakes import make_circuit
+
+ROAD = {Colour.MID_GREY, Colour.DARK_GREY}
+
+FLAT = make_circuit("Flat Park", 1000)
+HILL = make_circuit(
+    "Hill Park",
+    sections=[
+        Straight(length=100),
+        Straight(length=200, climb=12),
+        Straight(length=200, climb=-12),
+        Straight(length=500),
+    ],
+)
+RING = make_circuit(
+    "Ring",
+    sections=[
+        Straight(length=100),
+        Corner(turn=Side.RIGHT, radius=100, enter=5, hold=600, leave=5),
+        Straight(length=290),
+    ],
+)
+HAIRPIN = make_circuit(
+    "Hairpin",
+    sections=[
+        Straight(length=300),
+        Corner(turn=Side.LEFT, radius=30, enter=10, hold=80, leave=10),
+        Straight(length=400),
+        Corner(turn=Side.RIGHT, radius=60, enter=10, hold=170, leave=10),
+        Straight(length=200),
+    ],
+)
+
+
+def frame_at(circuit: Circuit, distance: float, **race: float) -> RaceFrame:
+    return race_frame(circuit, Race(distance=distance, **race))
+
+
+def road(frame: RaceFrame) -> list[Polygon]:
+    return coloured(frame, ROAD)
+
+
+def top(polygon: Polygon) -> int:
+    return min(y for _, y in polygon.points)
+
+
+def bottom(polygon: Polygon) -> int:
+    return max(y for _, y in polygon.points)
+
+
+def xs(polygon: Polygon) -> list[int]:
+    return sorted(x for x, _ in polygon.points)
+
+
+def coloured(frame: RaceFrame, colours: Collection[Colour]) -> list[Polygon]:
+    return [polygon for polygon in frame.polygons if polygon.colour in colours]
+
+
+@given(
+    circuit=st.sampled_from([FLAT, HILL, RING]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_road_strips_run_near_to_far_each_wholly_above_the_last(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    strips = road(frame_at(circuit, distance, lateral=lateral))
+
+    for near, far in pairwise(strips):
+        assert bottom(far) <= top(near)
+
+
+@given(
+    circuit=st.sampled_from([FLAT, HILL, RING]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_nothing_thinner_than_a_pixel_row_is_drawn(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    for polygon in frame_at(circuit, distance, lateral=lateral).polygons:
+        assert top(polygon) < bottom(polygon)
+
+
+@given(
+    circuit=st.sampled_from([FLAT, RING]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_each_road_strip_starts_where_the_last_one_finished(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    strips = road(frame_at(circuit, distance, lateral=lateral))
+
+    for near, far in pairwise(strips):
+        near_left, near_right = far.points[:2]
+        assert (near_left, near_right) == (near.points[3], near.points[2])
+
+
+@given(
+    circuit=st.sampled_from([RING, HAIRPIN]),
+    distance=st.floats(-5000, 5000),
+    lateral=st.floats(-10, 10),
+)
+def test_the_road_stops_where_it_turns_side_on(
+    circuit: Circuit, distance: float, lateral: float
+) -> None:
+    for strip in road(frame_at(circuit, distance, lateral=lateral)):
+        (near_left, _), (near_right, _), (far_right, _), (far_left, _) = strip.points
+        rows = bottom(strip) - top(strip)
+        width = far_right - far_left + 1
+        assert far_right - near_right <= width * rows + 1
+        assert near_left - far_left <= width * rows + 1
+
+
+@given(distance=st.floats(-5000, 5000), lateral=st.floats(-10, 10))
+def test_the_road_reaches_the_bottom_of_the_canvas(
+    distance: float, lateral: float
+) -> None:
+    strips = road(frame_at(FLAT, distance, lateral=lateral))
+
+    assert bottom(strips[0]) >= CANVAS_HEIGHT
+
+
+def test_a_straight_flat_road_runs_to_the_horizon_centred_on_the_car() -> None:
+    strips = road(frame_at(FLAT, 500))
+
+    assert top(strips[-1]) == HORIZON
+    for strip in strips:
+        left, *_, right = xs(strip)
+        assert left + right in (CANVAS_WIDTH - 1, CANVAS_WIDTH, CANVAS_WIDTH + 1)
+
+
+def test_moving_across_the_road_shifts_it_the_other_way() -> None:
+    centred = road(frame_at(FLAT, 500))[5]
+    moved_right = road(frame_at(FLAT, 500, lateral=2))[5]
+
+    assert xs(moved_right)[0] < xs(centred)[0]
+
+
+def test_a_crest_hides_the_road_beyond_it() -> None:
+    climbing = road(frame_at(HILL, 120))
+
+    assert top(climbing[-1]) < HORIZON - 4
+
+
+def test_a_right_hand_corner_bends_the_road_right() -> None:
+    (far_right, _), (far_left, _) = road(frame_at(RING, 50))[-1].points[2:]
+
+    assert (far_left + far_right) / 2 > CANVAS_WIDTH / 2 + 5
+
+
+def test_the_road_does_not_jump_as_the_car_crosses_a_segment_boundary() -> None:
+    before = road(frame_at(RING, 400 - 0.01))
+    after = road(frame_at(RING, 400 + 0.01))
+
+    for old, new in zip(before[1:30], after[1:30], strict=True):
+        for (old_x, old_y), (new_x, new_y) in zip(old.points, new.points, strict=True):
+            assert abs(old_x - new_x) <= 1
+            assert abs(old_y - new_y) <= 1
+
+
+def test_grass_kerbs_and_road_change_shade_every_three_segments() -> None:
+    frame = frame_at(FLAT, 495.5)
+    shades = [
+        [polygon.colour for polygon in coloured(frame, colours)][:7]
+        for colours in [
+            (Colour.LIGHT_GREEN, Colour.DARK_GREEN),
+            (Colour.RED, Colour.WHITE),
+            (Colour.MID_GREY, Colour.DARK_GREY),
+        ]
+    ]
+
+    assert shades == [
+        [Colour.DARK_GREEN] * 3 + [Colour.LIGHT_GREEN] * 3 + [Colour.DARK_GREEN],
+        [Colour.WHITE] * 3 + [Colour.RED] * 3 + [Colour.WHITE],
+        [Colour.DARK_GREY] * 3 + [Colour.MID_GREY] * 3 + [Colour.DARK_GREY],
+    ]
+
+
+def test_the_start_finish_line_is_two_rows_of_eight_chequers() -> None:
+    chequers = coloured(frame_at(FLAT, 990), [Colour.BLACK, Colour.WHITE])
+
+    blacks = [polygon for polygon in chequers if polygon.colour is Colour.BLACK]
+    rows = {bottom(polygon) for polygon in blacks}
+    assert len(blacks) == 8
+    assert len(rows) == 2
+
+
+def test_the_grid_is_drawn_in_white_on_both_sides_of_the_road() -> None:
+    lines = coloured(frame_at(FLAT, 900), [Colour.WHITE])
+    middle = CANVAS_WIDTH / 2
+
+    assert any(max(xs(line)) < middle for line in lines)
+    assert any(min(xs(line)) > middle for line in lines)
+
+
+def test_the_pit_area_is_an_amber_dashed_line_down_the_middle() -> None:
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    middle = CANVAS_WIDTH / 2
+
+    dashes = [line for line in amber if min(xs(line)) <= middle <= max(xs(line))]
+    assert len(dashes) >= 5
+
+
+def test_the_pit_side_of_the_road_is_hatched_in_amber() -> None:
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    middle = CANVAS_WIDTH / 2
+
+    assert len([mark for mark in amber if min(xs(mark)) > middle]) >= 5
+    assert not [mark for mark in amber if max(xs(mark)) < middle]
+
+
+def test_pit_hatching_slants_towards_the_road_edge() -> None:
+    amber = coloured(frame_at(FLAT, 0.5), [Colour.AMBER])
+    hatch = next(mark for mark in amber if min(xs(mark)) > CANVAS_WIDTH / 2)
+    near_x = [x for x, y in hatch.points if y == bottom(hatch)]
+    far_x = [x for x, y in hatch.points if y == top(hatch)]
+
+    assert min(far_x) > min(near_x)
+
+
+def boxes(frame: RaceFrame, colour: Colour) -> list[tuple[int, int, int, int]]:
+    return [
+        (box.x, box.y, box.width, box.height)
+        for box in frame.boxes
+        if box.colour is colour
+    ]
+
+
+def silhouette(frame: RaceFrame) -> list[int | None]:
+    tops: list[int | None] = [None] * CANVAS_WIDTH
+    for x, y, width, _ in boxes(frame, Colour.NAVY):
+        tops[x : x + width] = [y] * width
+    return tops
+
+
+def test_the_skyline_stands_on_the_horizon_in_front_of_a_pale_band() -> None:
+    frame = frame_at(FLAT, 500)
+    [(_, band_top, _, band_height)] = boxes(frame, Colour.PALE_SKY)
+
+    assert band_top + band_height == HORIZON
+    assert all(y + height == HORIZON for _, y, _, height in boxes(frame, Colour.NAVY))
+    assert any(top is not None for top in silhouette(frame))
+
+
+@pytest.mark.parametrize("distance", [50, 300])
+def test_the_grass_always_starts_at_the_horizon(distance: float) -> None:
+    [(_, ground, _, _)] = boxes(frame_at(HILL, distance), Colour.DARK_GREEN)
+
+    assert ground == HORIZON
+
+
+def test_the_skyline_slides_as_the_heading_turns() -> None:
+    shift = 64
+    straight_on = silhouette(frame_at(FLAT, 500))
+    turned_right = silhouette(frame_at(FLAT, 500, heading=shift / FOCAL_LENGTH))
+
+    assert turned_right[: CANVAS_WIDTH - shift] == straight_on[shift:]
+    assert turned_right != straight_on
+
+
+def skyline_base(frame: RaceFrame) -> int:
+    [base] = {y + height for _, y, _, height in boxes(frame, Colour.NAVY)}
+    return base
+
+
+def test_the_skyline_sinks_as_the_car_climbs() -> None:
+    at_start = skyline_base(frame_at(HILL, 50))
+    on_the_crest = skyline_base(frame_at(HILL, 300))
+
+    assert on_the_crest > at_start
+
+
+def test_every_skyline_wraps_round_once_per_full_turn() -> None:
+    for strip in SKYLINES.values():
+        assert len(strip) == SKYLINE_WIDTH == round(math.tau * FOCAL_LENGTH)
